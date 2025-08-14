@@ -49,6 +49,13 @@ if ($account_name === false) {
 }
 
 $step = $_POST['step'] ?? 'info';
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === "info") {
+    if ($new_balance < 0) {
+        $step = "warning";
+    } else {
+        $step = "confirm";
+    }
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === "confirm") {
     $entered_password = $_POST['password'] ?? '';
@@ -221,81 +228,101 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === "confirm") {
         font-size: 16px;
       }
       .confirm-actions {
-        margin-top: 25px;
-        display: flex;
-        justify-content: space-between;
-      }
+          display: flex;
+          justify-content: space-between;
+          margin-top: 20px;
+        }
       .confirm-actions button,
-      .confirm-actions a {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        font-weight: bold;
-        text-decoration: none;
-        color: white;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-      }
+        .confirm-actions a {
+          padding: 10px 20px;
+          border-radius: 6px;
+          font-weight: bold;
+          text-decoration: none;
+          color: white;
+          background-color: #dc3545;
+          border: none;
+          cursor: pointer;
+        }
       .confirm-actions button {
         background-color: #dc3545;
       }
-      .confirm-actions a {
-        background-color: #6c757d;
-      }
-      .confirm-actions button:hover {
-        background-color: #c82333;
-      }
-      .confirm-actions a:hover {
-        background-color: #5a6268;
-      }
+        .confirm-actions a {
+          background-color: #6c757d;
+        }
+        .confirm-actions button:hover {
+          background-color: #c82333;
+        }
+        .confirm-actions a:hover {
+          background-color: #5a6268;
+        }
+      .form-box {
+          background-color: #f8f9fa;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+      .confirm-box {
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          padding: 20px;
+          border-radius: 8px;
+        }
+        .confirm-box h3 {
+          color: #856404;
+        }
   </style>
 </head>
-<body>
-    <form method="post">
-      <h2>🗑️ Xóa giao dịch</h2>
+    <body>
+      <form method="post">
+        <div class="form-box">
+          <h2>⚠️ Xác nhận xóa giao dịch</h2>
     
-      <p><strong>Tài khoản:</strong> <?= htmlspecialchars($account_name) ?></p>
-      <p><strong>Loại:</strong> <?= $info['type'] == 0 ? 'Thu' : 'Chi' ?></p>
-      <p><strong>Số tiền:</strong> <?= number_format($info['amount'], 2) ?> VND</p>
-      <?php
-        $desc = trim($info['description'] ?? '');
-        if (strpos($desc, 'Tạo tài khoản mới:') === 0) {
-            $desc = 'Tạo khoản tiền mới';
-        }
-      ?>
-      <p><strong>Mô tả:</strong> <?= htmlspecialchars($desc ?: 'Không có') ?></p>
-        <?php if ($step === 'warning' && $new_balance < 0): ?>
-          <div class="overlay">
-            <div class="confirm-box">
-              <h3>⚠️ Số dư sẽ bị âm nếu xoá giao dịch này</h3>
-              <p>Số dư hiện tại: <?= number_format($current_balance, 0, ',', '.') ?> VND</p>
-              <p>Số dư sau khi xoá: <?= number_format($new_balance, 0, ',', '.') ?> VND</p>
-              <input type="hidden" name="step" value="confirm">
-              <div class="confirm-actions">
-                <button type="submit">✅ Xóa giao dịch</button>
-                <a href="dashboard.php">← Quay lại</a>
+          <p><strong>Tài khoản:</strong> <?= htmlspecialchars($account_name) ?></p>
+          <p><strong>Loại:</strong> <?= $info['type'] == 0 ? 'Thu' : 'Chi' ?></p>
+          <p><strong>Số tiền:</strong> <?= number_format($info['amount'], 2) ?> VND</p>
+          <?php
+            $desc = trim($info['description'] ?? '');
+            if (strpos($desc, 'Tạo tài khoản mới:') === 0) {
+                $desc = 'Tạo khoản tiền mới';
+            }
+          ?>
+          <p><strong>Mô tả:</strong> <?= htmlspecialchars($desc ?: 'Không có') ?></p>
+    
+          <?php if ($step === 'warning' && $new_balance < 0): ?>
+            <div class="overlay">
+              <div class="confirm-box">
+                <h3>⚠️ Số dư sẽ bị âm nếu xoá giao dịch này</h3>
+                <p>Số dư hiện tại: <?= number_format($current_balance, 0, ',', '.') ?> VND</p>
+                <p>Số dư sau khi xoá: <?= number_format($new_balance, 0, ',', '.') ?> VND</p>
+                <input type="hidden" name="step" value="confirm">
+                <div class="confirm-actions">
+                  <button type="submit">🗑️ Xóa giao dịch</button>
+                  <a href="dashboard.php">← Quay lại</a>
+                </div>
               </div>
             </div>
-          </div>
-        <?php endif; ?>
-
-      <?php if ($step === 'confirm'): ?>
-        <?php if (isset($error)): ?><p style="color:red;"><?= $error ?></p><?php endif; ?>
-        <label for="password">🔐 Nhập mật khẩu để xác nhận:</label>
-        <input type="password" name="password" id="password" required>
-        <input type="hidden" name="step" value="confirm">
-        <div class="actions">
-          <button type="submit">✅ Xác nhận xóa</button>
-          <a href="dashboard.php">← Quay lại Dashboard</a>
+          <?php endif; ?>
+    
+          <?php if ($step === 'confirm'): ?>
+            <?php if (isset($error)): ?>
+              <p style="color:red;"><?= $error ?></p>
+            <?php endif; ?>
+            <label for="password">🔐 Nhập mật khẩu để xác nhận:</label>
+            <input type="password" name="password" id="password" required>
+            <input type="hidden" name="step" value="confirm">
+            <div class="confirm-actions">
+              <button type="submit">🗑️ Xóa giao dịch</button>
+              <a href="dashboard.php">← Quay lại</a>
+            </div>
+          <?php elseif (!($step === 'warning' && $new_balance < 0)): ?>
+            <input type="hidden" name="step" value="confirm">
+            <div class="confirm-actions">
+              <button type="submit">🗑️ Xóa giao dịch</button>
+              <a href="dashboard.php">← Quay lại Dashboard</a>
+            </div>
+          <?php endif; ?>
         </div>
-      <?php else: ?>
-        <input type="hidden" name="step" value="confirm">
-        <div class="actions">
-          <button type="submit">🗑️ Xóa giao dịch</button>
-          <a href="dashboard.php">← Quay lại Dashboard</a>
-        </div>
-      <?php endif; ?>
-    </form>
-</body>
+      </form>
+    </body>
 </html>
 
