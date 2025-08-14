@@ -862,7 +862,11 @@ $typeLabels = [
                               <td class="action-buttons">
                                   <?php if ($row['type'] != 2): ?>
                                     <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
-                                    <a href="delete_transaction.php?id=<?= $row['id'] ?>" class="btn-delete">🗑️ Xoá</a>
+                                    <form method="post" action="delete_transaction.php" style="display:inline;">
+                                      <input type="hidden" name="id" value="<?= $transaction_id ?>">
+                                      <input type="hidden" name="step" value="info">
+                                      <button type="submit" class="btn-delete">🗑️ Xoá</button>
+                                    </form>
                                   <?php else: ?>
                                     <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
                                   <?php endif; ?>
