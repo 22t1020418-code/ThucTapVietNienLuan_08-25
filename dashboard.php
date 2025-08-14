@@ -531,9 +531,6 @@ $typeLabels = [
     }
     /* 6. Responsive */
     @media (max-width: 992px) {
-      .dashboard-wrapper .sidebar {
-        transform: translateX(-100%);
-      }
       .dashboard-wrapper .sidebar.open {
         transform: translateX(0);
       }
