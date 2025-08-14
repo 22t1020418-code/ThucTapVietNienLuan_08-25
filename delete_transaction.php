@@ -22,8 +22,15 @@ if (!$info) {
 }
 
 $amount = floatval($info["amount"]);
+$formatted_amount = number_format($amount, 0, '.' ',');
 $type = intval($info["type"]);
 $account_id = intval($info["account_id"]);
+
+$account_query = "SELECT name FROM accounts WHERE id = $1 AND user_id = $2";
+$account_result = pg_query_params($conn, $account_query, [$account_id, $user_id]);
+$account_data = pg_fetch_assoc($account_result);
+$account_name = $account_data['name'] ?? 'Không xác định';
+
 
 // Truy vấn số dư hiện tại
 $balance_query = "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2";
@@ -36,23 +43,46 @@ $new_balance = ($type == 1) ? $current_balance + $amount : $current_balance - $a
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($step === "info") {
-        $step = ($new_balance < 0) ? "warning" : "confirm";
+        if ($new_balance < 0) {
+            $step = "warning";
+        } else {
+            $step = "confirm";
+        }
     }
-
+        if ($step === "warning") {
+        echo '<div style="max-width: 500px; margin: 40px auto; padding: 20px; border: 2px solid #f44336; border-radius: 8px; background-color: #fff5f5; font-family: Arial, sans-serif;">';
+        echo '<h2 style="color: #d32f2f;">⚠️ Cảnh báo: Số dư sẽ bị âm nếu xoá giao dịch này</h2>';
+        echo '<p><strong>Tài khoản:</strong> ' . htmlspecialchars($account_name ?? 'Không xác định') . '</p>';
+        echo '<p><strong>Số dư hiện tại:</strong> ' . number_format($current_balance, 0, ',', '.') . ' VND</p>';
+        echo '<p><strong>Số dư sau khi xoá:</strong> <span style="color: #d32f2f; font-weight: bold;">' . number_format($new_balance, 0, ',', '.') . ' VND</span></p>';
+        echo '<form method="post" style="margin-top: 20px;">';
+        echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
+        echo '<input type="hidden" name="step" value="confirm">';
+        echo '<button type="submit" style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Tiếp tục xoá</button>';
+        echo '<a href="transactions.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Quay lại</a>';
+        echo '</form>';
+        echo '</div>';
+        exit;
+    }
     elseif ($step === "confirm") {
-        // Hiển thị form nhập mật khẩu
-        echo "<h3>Xác nhận xoá giao dịch</h3>";
-        echo "<form method='post'>";
-        echo "<input type='hidden' name='id' value='$transaction_id'>";
-        echo "<input type='hidden' name='step' value='delete'>";
-        echo "<label>Mật khẩu:</label> <input type='password' name='password' required>";
-        echo "<button type='submit'>Xác nhận xoá</button>";
-        echo "</form>";
+        echo '<div style="max-width: 500px; margin: 40px auto; padding: 20px; border: 2px solid #1976d2; border-radius: 8px; background-color: #e3f2fd; font-family: Arial, sans-serif;">';
+        echo '<h2 style="color: #1976d2;">🔐 Xác nhận xoá giao dịch</h2>';
+        echo '<p>Vui lòng nhập mật khẩu để xác nhận xoá giao dịch khỏi tài khoản <strong>' . htmlspecialchars($account_name ?? 'Không xác định') . '</strong>.</p>';
+        echo '<form method="post" style="margin-top: 20px;">';
+        echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
+        echo '<input type="hidden" name="step" value="delete">';
+        echo '<label for="password" style="display:block; margin-bottom:8px;">Mật khẩu:</label>';
+        echo '<input type="password" name="password" id="password" required style="width:100%; padding:8px; margin-bottom:16px; border:1px solid #ccc; border-radius:4px;">';
+        echo '<button type="submit" style="background-color: #1976d2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Xác nhận xoá</button>';
+        echo '<a href="transactions.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Huỷ bỏ</a>';
+        echo '</form>';
+        echo '</div>';
         exit;
     }
 
     elseif ($step === "delete") {
-        $entered_password = $_POST["password"] ?? "";
+        // $entered_password = $_POST["password"] ?? "";
+        $step = "confirm";
 
         // Kiểm tra mật khẩu
         $user_query = "SELECT password FROM users WHERE id = $1";
@@ -85,18 +115,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-if ($step === "warning") {
-    echo "<h3>⚠️ Cảnh báo: Số dư sẽ bị âm nếu xoá giao dịch này</h3>";
-    echo "<p>Số dư hiện tại: " . number_format($current_balance, 0, ',', '.') . " VND</p>";
-    echo "<p>Số dư sau khi xoá: " . number_format($new_balance, 0, ',', '.') . " VND</p>";
-    echo "<form method='post'>";
-    echo "<input type='hidden' name='id' value='$transaction_id'>";
-    echo "<input type='hidden' name='step' value='confirm'>";
-    echo "<button type='submit'>Tiếp tục</button>";
-    echo "<a href='dashboard.php'>← Quay lại</a>";
-    echo "</form>";
-    exit;
-}
 ?>
     
 <!DOCTYPE html>
