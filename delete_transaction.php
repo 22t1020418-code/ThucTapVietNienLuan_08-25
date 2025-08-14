@@ -59,7 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
         echo '<input type="hidden" name="step" value="confirm">';
         echo '<button type="submit" style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Tiếp tục xoá</button>';
-        echo '<a href="transactions.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Quay lại</a>';
+        echo '<a href="dashboard.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Quay lại</a>';
         echo '</form>';
         echo '</div>';
         exit;
@@ -74,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '<label for="password" style="display:block; margin-bottom:8px;">Mật khẩu:</label>';
         echo '<input type="password" name="password" id="password" required style="width:100%; padding:8px; margin-bottom:16px; border:1px solid #ccc; border-radius:4px;">';
         echo '<button type="submit" style="background-color: #1976d2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Xác nhận xoá</button>';
-        echo '<a href="transactions.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Huỷ bỏ</a>';
+        echo '<a href="dashboard.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Huỷ bỏ</a>';
         echo '</form>';
         echo '</div>';
         exit;
