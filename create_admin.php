@@ -1,28 +1,27 @@
 <?php
-include "db.php";
+include "db.php"; // Kết nối PostgreSQL
 
 $username = 'admin';
-$password = password_hash('admin123', PASSWORD_DEFAULT); // Băm đúng cách
-$user_id = 1; // Đảm bảo user admin có ID = 1
+$password = password_hash('admin123', PASSWORD_DEFAULT); // Băm mật khẩu
+$avatar_path = 'avt_ad.png'; // Đường dẫn ảnh đại diện
+$role = 'admin';
 
-// Kiểm tra xem đã tồn tại chưa
-$check = mysqli_prepare($conn, "SELECT id FROM users WHERE username = ?");
-mysqli_stmt_bind_param($check, "s", $username);
-mysqli_stmt_execute($check);
-$result = mysqli_stmt_get_result($check);
+// Kiểm tra xem tài khoản đã tồn tại chưa
+$check_query = "SELECT id FROM users WHERE username = $1";
+$check_result = pg_query_params($conn, $check_query, [$username]);
 
-if (mysqli_fetch_assoc($result)) {
-    echo "Tài khoản admin đã tồn tại!";
+if (pg_fetch_assoc($check_result)) {
+    echo "⚠️ Tài khoản admin đã tồn tại!";
     exit;
 }
 
-// Thêm tài khoản mới
-$stmt = mysqli_prepare($conn, "INSERT INTO users (id, username, password) VALUES (?, ?, ?)");
-mysqli_stmt_bind_param($stmt, "iss", $user_id, $username, $password);
+// Thêm tài khoản admin mới
+$insert_query = "INSERT INTO users (username, password, role, avatar) VALUES ($1, $2, $3, $4)";
+$insert_result = pg_query_params($conn, $insert_query, [$username, $password, $role, $avatar_path]);
 
-if (mysqli_stmt_execute($stmt)) {
+if ($insert_result) {
     echo "✅ Tạo tài khoản admin thành công!";
 } else {
-    echo "❌ Lỗi khi tạo tài khoản: " . mysqli_error($conn);
+    echo "❌ Lỗi khi tạo tài khoản.";
 }
 ?>
