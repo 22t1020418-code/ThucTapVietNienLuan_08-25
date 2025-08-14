@@ -461,6 +461,7 @@ $content_options = ["Ăn uống", "Đi lại", "Lương", "Thưởng", "Tiền �
     const datepickerInstance = flatpickr("#datepicker", {
       dateFormat: "d/m/Y",
       defaultDate: "<?= date('d/m/Y', strtotime($datetime)) ?>"
+      maxDate: "today"
     });
     
     calendarBtn.addEventListener("click", function () {
