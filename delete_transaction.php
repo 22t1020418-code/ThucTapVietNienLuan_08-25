@@ -53,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '<div style="max-width: 500px; margin: 40px auto; padding: 20px; border: 2px solid #f44336; border-radius: 8px; background-color: #fff5f5; font-family: Arial, sans-serif;">';
         echo '<h2 style="color: #d32f2f;">⚠️ Cảnh báo: Số dư sẽ bị âm nếu xoá giao dịch này</h2>';
         echo '<p><strong>Tài khoản:</strong> ' . htmlspecialchars($account_name ?? 'Không xác định') . '</p>';
-        echo '<p><strong>Số dư hiện tại:</strong> ' . number_format($current_balance, 0, ',', '.') . ' VND</p>';
+        echo '<p><strong>Số dư hiện tại:</strong> ' . number_format($current_balance, 0, '.' ',') . ' VND</p>';
         echo '<p><strong>Số dư sau khi xoá:</strong> <span style="color: #d32f2f; font-weight: bold;">' . number_format($new_balance, 0, ',', '.') . ' VND</span></p>';
         echo '<form method="post" style="margin-top: 20px;">';
         echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
