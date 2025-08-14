@@ -1,97 +1,104 @@
 <?php
 session_start();
-include "db.php"; // Kết nối bằng pg_connect()
-date_default_timezone_set('Asia/Ho_Chi_Minh');
+require_once "connect.php";
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
+$user_id = $_SESSION["user_id"] ?? null;
+$transaction_id = $_POST["id"] ?? $_GET["id"] ?? null;
+$step = $_POST["step"] ?? "info";
 
-$user_id = $_SESSION['user_id'];
-$transaction_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-if (!$transaction_id) {
-    echo "ID giao dịch không hợp lệ.";
-    exit();
+if (!$user_id || !$transaction_id) {
+    echo "Thiếu thông tin người dùng hoặc giao dịch.";
+    exit;
 }
 
 // Truy vấn thông tin giao dịch
-$info_query = "SELECT amount, type, account_id, description FROM transactions WHERE id = $1 AND user_id = $2";
-$info_result = pg_query_params($conn, $info_query, [$transaction_id, $user_id]);
-$info = pg_fetch_assoc($info_result);
+$query = "SELECT amount, type, account_id FROM transactions WHERE id = $1 AND user_id = $2";
+$result = pg_query_params($conn, $query, [$transaction_id, $user_id]);
+$info = pg_fetch_assoc($result);
 
 if (!$info) {
     echo "Giao dịch không tồn tại hoặc không thuộc quyền truy cập.";
-    exit();
+    exit;
 }
 
-$amount = floatval($info['amount']);
-$type = intval($info['type']);
-$account_id = intval($info['account_id']);
+$amount = floatval($info["amount"]);
+$type = intval($info["type"]);
+$account_id = intval($info["account_id"]);
 
 // Truy vấn số dư hiện tại
 $balance_query = "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2";
 $balance_result = pg_query_params($conn, $balance_query, [$account_id, $user_id]);
 $balance_data = pg_fetch_assoc($balance_result);
-$current_balance = floatval($balance_data['balance']);
+$current_balance = floatval($balance_data["balance"]);
 
-// Tính số dư sau khi xoá
+// Tính số dư mới
 $new_balance = ($type == 1) ? $current_balance + $amount : $current_balance - $amount;
 
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if ($step === "info") {
+        $step = ($new_balance < 0) ? "warning" : "confirm";
+    }
 
-// Truy vấn tên tài khoản để hiển thị
-$account_name_query = "SELECT name FROM accounts WHERE id = $1 AND user_id = $2";
-$account_name_result = pg_query_params($conn, $account_name_query, [$account_id, $user_id]);
-$account_name = pg_fetch_result($account_name_result, 0, 0);
-if ($account_name === false) {
-    echo "Tài khoản không tồn tại hoặc không thuộc quyền truy cập.";
-    exit();
-}
+    elseif ($step === "confirm") {
+        // Hiển thị form nhập mật khẩu
+        echo "<h3>Xác nhận xoá giao dịch</h3>";
+        echo "<form method='post'>";
+        echo "<input type='hidden' name='id' value='$transaction_id'>";
+        echo "<input type='hidden' name='step' value='delete'>";
+        echo "<label>Mật khẩu:</label> <input type='password' name='password' required>";
+        echo "<button type='submit'>Xác nhận xoá</button>";
+        echo "</form>";
+        exit;
+    }
 
-$step = $_POST['step'] ?? 'info';
-if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === "info") {
-    if ($new_balance < 0) {
-        $step = "warning";
-    } else {
-        $step = "confirm";
+    elseif ($step === "delete") {
+        $entered_password = $_POST["password"] ?? "";
+
+        // Kiểm tra mật khẩu
+        $user_query = "SELECT password FROM users WHERE id = $1";
+        $user_result = pg_query_params($conn, $user_query, [$user_id]);
+        $user_data = pg_fetch_assoc($user_result);
+
+        if (!$user_data || !password_verify($entered_password, $user_data["password"])) {
+            echo "<p style='color:red;'>Mật khẩu không đúng. Không thể xoá giao dịch.</p>";
+            exit;
+        }
+
+        // Thực hiện xoá
+        pg_query($conn, "BEGIN");
+        try {
+            $adjust_query = ($type == 1)
+                ? "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3"
+                : "UPDATE accounts SET balance = balance - $1 WHERE id = $2 AND user_id = $3";
+            pg_query_params($conn, $adjust_query, [$amount, $account_id, $user_id]);
+
+            pg_query_params($conn, "DELETE FROM transactions WHERE id = $1 AND user_id = $2", [$transaction_id, $user_id]);
+
+            pg_query($conn, "COMMIT");
+            header("Location: dashboard.php?deleted=1");
+            exit;
+        } catch (Exception $e) {
+            pg_query($conn, "ROLLBACK");
+            echo "<p style='color:red;'>Lỗi khi xoá: " . htmlspecialchars($e->getMessage()) . "</p>";
+            exit;
+        }
     }
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === "confirm") {
-    $entered_password = $_POST['password'] ?? '';
-
-    // Truy vấn mật khẩu đã mã hoá
-    $user_query = "SELECT password FROM users WHERE id = $1";
-    $user_result = pg_query_params($conn, $user_query, [$user_id]);
-    $user_data = pg_fetch_assoc($user_result);
-
-    if (!$user_data || !password_verify($entered_password, $user_data['password'])) {
-        echo "<p style='color:red;'>Mật khẩu không đúng. Không thể xoá giao dịch.</p>";
-        exit();
-    }
-
-    // Thực hiện xoá trong transaction
-    pg_query($conn, 'BEGIN');
-    try {
-        $adjust_query = ($type == 1)
-            ? "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3"
-            : "UPDATE accounts SET balance = balance - $1 WHERE id = $2 AND user_id = $3";
-        pg_query_params($conn, $adjust_query, [$amount, $account_id, $user_id]);
-
-        pg_query_params($conn, "DELETE FROM transactions WHERE id = $1 AND user_id = $2", [$transaction_id, $user_id]);
-
-        pg_query($conn, 'COMMIT');
-        header("Location: dashboard.php?deleted=1");
-        exit();
-    } catch (Exception $e) {
-        pg_query($conn, 'ROLLBACK');
-        echo "<p style='color:red;'>Lỗi khi xoá: " . htmlspecialchars($e->getMessage()) . "</p>";
-        exit();
-    }
+if ($step === "warning") {
+    echo "<h3>⚠️ Cảnh báo: Số dư sẽ bị âm nếu xoá giao dịch này</h3>";
+    echo "<p>Số dư hiện tại: " . number_format($current_balance, 0, ',', '.') . " VND</p>";
+    echo "<p>Số dư sau khi xoá: " . number_format($new_balance, 0, ',', '.') . " VND</p>";
+    echo "<form method='post'>";
+    echo "<input type='hidden' name='id' value='$transaction_id'>";
+    echo "<input type='hidden' name='step' value='confirm'>";
+    echo "<button type='submit'>Tiếp tục</button>";
+    echo "<a href='dashboard.php'>← Quay lại</a>";
+    echo "</form>";
+    exit;
 }
 ?>
-
-
+    
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -273,7 +280,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === "confirm") {
   </style>
 </head>
     <body>
-      <form method="post">
+      <form method="post" action="">
         <div class="form-box">
           <h2>⚠️ Xác nhận xóa giao dịch</h2>
     
