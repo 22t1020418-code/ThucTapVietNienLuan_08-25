@@ -1,10 +1,14 @@
 <?php
 session_start();
+include "db.php";
 
 $user_id = $_SESSION["user_id"] ?? null;
 $transaction_id = $_POST["id"] ?? $_GET["id"] ?? null;
 $step = $_POST["step"] ?? "info";
 
+if (!$conn) {
+    die("Không thể kết nối đến cơ sở dữ liệu.");
+}
 if (!$user_id || !$transaction_id) {
     echo "Thiếu thông tin người dùng hoặc giao dịch.";
     exit;
