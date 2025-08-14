@@ -455,32 +455,39 @@ $content_options = ["Ăn uống", "Đi lại", "Lương", "Thưởng", "Tiền �
     </form>
   </div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script>
-    const calendarBtn = document.querySelector(".calendar-btn");
-    const datepickerInstance = flatpickr("#datepicker", {
-      dateFormat: "d/m/Y",
-      defaultDate: "<?= date('d/m/Y', strtotime($datetime)) ?>"
-      maxDate: "today"
-    });
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const datepickerInstance = flatpickr("#datepicker", {
+          dateFormat: "d/m/Y",
+          defaultDate: "<?= date('d/m/Y', strtotime($datetime)) ?>",
+          maxDate: "today"
+        });
     
-    calendarBtn.addEventListener("click", function () {
-      datepickerInstance.open();
-    });
-    const amountInput = document.getElementById('amount');
-
-      amountInput.addEventListener('input', function () {
-        let raw = this.value.replace(/,/g, '');
-        if (!isNaN(raw) && raw !== '') {
-          this.value = parseFloat(raw).toLocaleString('en-US');
-        } else {
-          this.value = '';
+        const calendarBtn = document.querySelector(".calendar-btn");
+        if (calendarBtn) {
+          calendarBtn.addEventListener("click", function () {
+            datepickerInstance.open();
+          });
+        }
+    
+        const amountInput = document.getElementById('amount');
+        if (amountInput) {
+          amountInput.addEventListener('input', function () {
+            let raw = this.value.replace(/,/g, '');
+            if (!isNaN(raw) && raw !== '') {
+              this.value = parseFloat(raw).toLocaleString('en-US');
+            } else {
+              this.value = '';
+            }
+          });
+    
+          document.querySelector('form').addEventListener('submit', function () {
+            const raw = amountInput.value.replace(/,/g, '');
+            amountInput.value = raw;
+          });
         }
       });
-    document.querySelector('form').addEventListener('submit', function () {
-    const raw = amountInput.value.replace(/,/g, '');
-    amountInput.value = raw;
-  });
-</script>
+    </script>
 </body>
 </html>
