@@ -22,7 +22,7 @@ if (!$info) {
 }
 
 $amount = floatval($info["amount"]);
-$formatted_amount = number_format($amount, 0, '.' ',');
+$formatted_amount = number_format($amount, 0, '.', ',');
 $type = intval($info["type"]);
 $account_id = intval($info["account_id"]);
 
