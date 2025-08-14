@@ -671,8 +671,18 @@ $typeLabels = [
     }
     
     .btn-delete {
-      background: #ffebee;
+      background-color: #ffebee;
       color: #c62828;
+      padding: 6px 10px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+    }
+    .btn-delete:hover {
+      background-color: #ffcdd2;
     }
     .toggle-btn {
         margin-left: 12px;
@@ -863,7 +873,7 @@ $typeLabels = [
                                   <?php if ($row['type'] != 2): ?>
                                     <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
                                     <form method="post" action="delete_transaction.php" style="display:inline;">
-                                      <input type="hidden" name="id" value="<?= $transaction_id ?>">
+                                      <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                       <input type="hidden" name="step" value="info">
                                       <button type="submit" class="btn-delete">🗑️ Xoá</button>
                                     </form>
