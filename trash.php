@@ -94,337 +94,348 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>🗑️ Thùng rác</title>
+  <title>🗑️ Giao dịch đã xóa</title>
     <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+    :root {
+      --primary-color: #4CAF50;
+      --secondary-color: #f1f1f1;
+      --text-color: #333;
+      --border-color: #ddd;
+      --hover-color: #e0e0e0;
+      --danger-color: #e74c3c;
+      --income-color: #2ecc71;
+      --expense-color: #e67e22;
+      --font-family: 'Segoe UI', sans-serif;
+    }
     
-      body {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #f4f6f8;
-        color: #2c3e50;
-      }
+    body {
+      margin: 0;
+      font-family: var(--font-family);
+      background-color: var(--secondary-color);
+    }
     
-      .container {
-        display: flex;
-        min-height: 100vh;
-      }
+    .header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     
-      /* Sidebar */
-      .sidebar {
-          width: 220px;
-          background-color: #2c3e50;
-          color: white;
-          padding: 24px;
-          font-size: 16px;
-        }
-      .sidebar h2 {
-        font-size: 18px;
-        margin-bottom: 16px;
-      }
+    .header h2 {
+      margin: 0;
+    }
     
-      .sidebar ul {
-        list-style: none;
-        padding: 0;
-      }
+    .user {
+      display: flex;
+      align-items: center;
+    }
     
-      .sidebar ul li {
-        margin-bottom: 12px;
-      }
+    .profile-link {
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
     
-     .sidebar ul li a {
-          color: white;
-          text-decoration: none;
-          display: block;
-          padding: 10px 14px;
-          border-radius: 6px;
-          transition: background-color 0.3s ease;
-        }
-        .sidebar ul li.active a {
-          background-color: #1abc9c;
-          color: white;
-        }
-      .sidebar ul li.active a,
-        .sidebar ul li a:hover {
-          background-color: #1abc9c;
-          color: white;
-        }
+    .avatar-img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
     
-      /* Main content */
-      .main-content {
-        flex: 1;
-        padding: 30px;
-      }
+    .dashboard-wrapper {
+      display: flex;
+    }
     
-      .header h1 {
-        font-size: 24px;
-        margin-bottom: 8px;
-      }
+    .sidebar {
+      width: 240px;
+      background-color: white;
+      padding: 16px;
+      border-right: 1px solid var(--border-color);
+    }
     
-      .header p {
-          font-size: 16px;
-          color: #7f8c8d;
-          margin-bottom: 24px;
-        }
+    .sidebar h3 {
+      margin-top: 0;
+    }
     
-      .content {
-        background-color: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 8px rgba(0,0,0,0.05);
-      }
+    .account-card {
+      display: block;
+      padding: 8px;
+      margin-bottom: 8px;
+      background-color: var(--secondary-color);
+      border-radius: 4px;
+      text-decoration: none;
+      color: var(--text-color);
+    }
     
-      /* Table */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
+    .account-card:hover {
+      background-color: var(--hover-color);
+    }
     
-      th, td {
-        padding: 12px;
-        border-bottom: 1px solid #ddd;
-        text-align: left;
-      }
+    .add-account {
+      display: block;
+      margin-top: 8px;
+      text-decoration: none;
+      color: var(--primary-color);
+    }
     
-      th {
-        background-color: #ecf0f1;
-        font-weight: bold;
-      }
+    .account-total {
+      margin-top: 16px;
+      font-weight: bold;
+    }
     
-      tr:hover {
-        background-color: #f9f9f9;
-      }
+    .sidebar a {
+      display: block;
+      margin-top: 12px;
+      text-decoration: none;
+      color: var(--text-color);
+    }
     
-      .deleted-transaction td {
-        text-decoration: line-through;
-        opacity: 0.6;
-      }
+    .sidebar a.active {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
     
-      /* Buttons */
-      .btn-edit, .btn-delete {
-        padding: 6px 12px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        margin-right: 6px;
-      }
+    .content {
+      flex-grow: 1;
+      padding: 24px;
+    }
     
-      .btn-edit {
-        background-color: #3498db;
-        color: white;
-      }
+    .content-header h2 {
+      margin-top: 0;
+    }
     
-      .btn-delete {
-        background-color: #e74c3c;
-        color: white;
-      }
+    .filter-panel {
+      background-color: white;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    }
     
-      .btn-edit:hover {
-        background-color: #2980b9;
-      }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
     
-      .btn-delete:hover {
-        background-color: #c0392b;
-      }
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
     
-      /* Feedback popup */
-      .popup-feedback {
-        background-color: #fff3cd;
-        color: #856404;
-        padding: 12px;
-        margin-bottom: 16px;
-        border-left: 4px solid #ffeeba;
-        border-radius: 4px;
-        font-weight: bold;
-        animation: fadeOut 4s ease forwards;
-      }
-        form {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-          margin-bottom: 20px;
-          align-items: center;
-        }
-        
-        form label {
-          min-width: 80px;
-          font-weight: bold;
-        }
-        
-        form input, form select {
-          padding: 8px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-          min-width: 160px;
-        }
-        td:last-child {
-          text-align: center;
-        }
-        .header .user {
-          display: flex;
-          align-items: center;
-        }  
-        .header .user a {
-          display: flex;
-          align-items: center;
-          text-decoration: none;
-          color: white;
-        }
-        .header .user span {
-          font-weight: bold;
-        }
-        .header .user img {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          margin-left: 10px;
-          object-fit: cover;
-          border: 2px solid white;
-        } 
-        .profile-link img {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          object-fit: cover;
-          margin-left: 10px;
-          border: 2px solid white;
-        }
-        .avatar-img {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 2px solid white;
-        }
-        .sidebar-header {
-          margin-bottom: 24px;
-          text-align: center;
-        }
-        .sidebar-header h1 {
-          font-size: 20px;
-          margin-bottom: 6px;
-          color: #ecf0f1;
-        }
-        .sidebar-header p {
-          font-size: 14px;
-          color: #bdc3c7;
-        }
-      @keyframes fadeOut {
-        0% { opacity: 1; }
-        80% { opacity: 1; }
-        100% { opacity: 0; display: none; }
-      }
+    .filter-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .stats-inline span {
+      margin-right: 16px;
+    }
+    
+    .filter-buttons button,
+    .filter-buttons .reset {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    
+    .filter-buttons .reset {
+      background-color: var(--danger-color);
+    }
+    
+    .table-wrapper {
+      overflow-x: auto;
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+    }
+    
+    tr:hover {
+      background-color: var(--hover-color);
+    }
+    
+    .deleted-transaction td {
+      color: var(--danger-color);
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn-edit,
+    .btn-delete {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+    
+    .btn-edit {
+      background-color: var(--income-color);
+    }
+    
+    .btn-delete {
+      background-color: var(--danger-color);
+    }
+    
+    .toggle-btn {
+      background-color: transparent;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+    }
     </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="user">
+    <!-- Header -->
+    <div class="header">
+      <h2>🗑️ Giao dịch đã xóa</h2>
+      <div class="user">
         <a href="profile.php" class="profile-link">
           <span>Xin chào, <?= htmlspecialchars($user['fullname'] ?? '') ?></span>
           <img src="<?= $avatarPath ?>" alt="Avatar" class="avatar-img">
         </a>
       </div>
-      <h2>📁 Menu</h2>
-      <ul>
-        <li><a href="dashboard.php">🏠 Dashboard</a></li>
-        <li><a href="advanced_statistics.php">📊 Thống kê nâng cao</a></li>
-        <li class="active"><a href="trash.php">🗑️ Thùng rác</a></li>
-        <li><a href="feedback.php">📩 Gửi phản hồi</a></li>
-      </ul>
-    </aside>
-
-    <!-- Main content -->
-    <main class="main-content">
-      <header class="header">
-        <h1>🗑️ Lịch sử giao dịch đã xóa</h1>
-        <p>Tổng số giao dịch đã xóa: <strong><?= $deleted_count ?></strong></p>
-      </header>
-
-      <!-- Nội dung chính -->
-      <section class="content">
-        <?php if (isset($_GET['message'])): ?>
-          <div class="popup-feedback">
-            <?= htmlspecialchars($_GET['message']) ?>
+    </div>
+    
+    <div class="dashboard-wrapper">
+      <!-- Sidebar -->
+      <nav class="sidebar">
+        <h3>Các khoản tiền</h3>
+        <?php foreach ($accounts as $acc): ?>
+          <a href="edit_account_balance.php?account_id=<?= $acc['id'] ?>" class="account-card">
+            <div class="account-name"><?= htmlspecialchars($acc['name']) ?></div>
+            <div class="account-balance">Số dư: <?= number_format($acc['balance'], 0, ',', '.') ?> VND</div>
+          </a>
+        <?php endforeach; ?>
+        <a href="create_account.php" class="add-account">+ Thêm khoản tiền</a>
+        <div class="account-total">
+          <strong>Tổng số dư:</strong> <?= number_format($totalAccountBalance, 0, ',', '.') ?> VND
+        </div>
+        <hr>
+        <a href="dashboard.php">🏠 Dashboard</a>
+        <a href="advanced_statistics.php">📊 Thống kê nâng cao</a>
+        <a href="trash.php" class="active">🗑️ Giao dịch đã xóa</a>
+        <a href="feedback.php">📩 Gửi phản hồi</a>
+      </nav>
+    
+      <!-- Content -->
+      <div class="content">
+        <main class="main">
+          <div class="content-header">
+            <h2>Lịch sử giao dịch đã xóa</h2>
           </div>
-        <?php endif; ?>
-        
-        <!-- Form lọc theo loại ví -->
-        <form method="GET" action="trash.php">
-          <label for="from_date">Từ ngày:</label>
-          <input type="date" name="from_date" id="from_date" value="<?= htmlspecialchars($from_date) ?>">
-        
-          <label for="to_date">Đến ngày:</label>
-          <input type="date" name="to_date" id="to_date" value="<?= htmlspecialchars($to_date) ?>">
-        
-          <label for="description">Mô tả:</label>
-          <input type="text" name="description" id="description" value="<?= htmlspecialchars($description) ?>">
-        
-          <label for="account_id">Khoản tiền:</label>
-          <select name="account_id" id="account_id">
-            <option value="">-- Tất cả --</option>
-            <?php while ($row = pg_fetch_assoc($account_res)): ?>
-              <option value="<?= $row['id'] ?>" <?= $account_id == $row['id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($row['name']) ?>
-              </option>
-            <?php endwhile; ?>
-          </select>
-        
-          <button type="submit" class="btn-edit">Lọc</button>
-        </form>
-
-        
-        <!-- Bảng giao dịch đã xóa -->
-        <table>
-          <thead>
-              <tr>
-                <th>Ngày tạo</th>
-                <th>Ngày xóa</th>
-                <th>Loại</th>
-                <th>Số tiền</th>
-                <th>Số dư còn lại</th>
-                <th>Ghi chú</th>
-                <th>Khoản tiền</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-            <?php if (empty($deleted_transactions)): ?>
-              <tr><td colspan="8">Không có giao dịch nào đã xóa.</td></tr>
-            <?php else: ?>
-              <?php foreach ($deleted_transactions as $txn): ?>
-                <tr class="deleted-transaction">
-                  <td><?= date('d/m/Y H:i:s', strtotime($txn['date'])) ?></td>
-                  <td><?= isset($txn['deleted_at']) ? date('d/m/Y H:i:s', strtotime($txn['deleted_at'])) : 'Không rõ' ?></td>
-                  <td><?= $txn['original_type'] == 1 ? 'Thu' : ($txn['original_type'] == 2 ? 'Chi' : 'Không rõ') ?></td>
-                  <td><?= number_format($txn['amount'], 0, ',', '.') ?>₫</td>
-                  <td><?= number_format($txn['remaining_balance'], 0, ',', '.') ?>₫</td>
-                  <td><?= htmlspecialchars($txn['description']) ?></td>
-                  <td><?= htmlspecialchars($txn['account_name']) ?></td>
-                  <td>
-                    <form method="POST" action="restore.php" style="display:inline;">
-                        <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
-                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                        <button type="submit" class="btn-edit">Khôi phục</button>
-                      </form>
-                      <form method="POST" action="delete_forever.php" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn?');">
-                        <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
-                        <button type="submit" class="btn-delete">Xóa vĩnh viễn</button>
-                      </form>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-        </table>
-      </section>
-    </main>
-  </div>
+    
+          <!-- Bộ lọc -->
+          <form method="get" class="filter-panel">
+            <div class="filter-row">
+              <div class="filters">
+                <!-- Các bộ lọc giống dashboard -->
+                <!-- from_date, to_date, type, description, account_id -->
+              </div>
+              <div class="filter-summary-row">
+                <div class="stats-inline">
+                  <span>🔼 Tổng thu: <strong><?= number_format($totalThuAll, 0, ',', '.') ?> VND</strong></span>
+                  <span>🔽 Tổng chi: <strong><?= number_format($totalChiAll, 0, ',', '.') ?> VND</strong></span>
+                </div>
+                <div class="filter-buttons">
+                  <button type="submit">🔍 Lọc</button>
+                  <a href="trash.php" class="reset">🧹 Làm mới</a>
+                </div>
+              </div>
+            </div>
+          </form>
+    
+          <!-- Bảng giao dịch đã xóa -->
+          <?php foreach ($grouped as $label => $entries): ?>
+            <div class="date-group">
+              <div class="date-heading">
+                <div class="date-label"><?= htmlspecialchars($label) ?></div>
+                <div class="date-summary">
+                  <span>🔼 Tổng thu: <?= number_format($totalThu, 0, ',', '.') ?> VND</span>
+                  <span>🔽 Tổng chi: <?= number_format($totalChi, 0, ',', '.') ?> VND</span>
+                </div>
+                <button onclick="toggleGroup('group_<?= md5($label) ?>')" class="toggle-btn">👁️ Xem chi tiết</button>
+              </div>
+            </div>
+            <div id="group_<?= md5($label) ?>" style="display: none;">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Giờ</th>
+                      <th>Loại</th>
+                      <th>Mô tả</th>
+                      <th>Số tiền</th>
+                      <th>Số dư</th>
+                      <th>Khoản tiền</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($entries as $row): ?>
+                      <tr class="deleted-transaction">
+                        <td><?= date('H:i:s', strtotime($row['date'])) ?></td>
+                        <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
+                        <td>🗑️ <?= htmlspecialchars($row['description']) ?></td>
+                        <td><?= number_format($row['amount'], 0, ',', '.') ?> VND</td>
+                        <td><?= number_format($row['remaining_balance'], 0, ',', '.') ?> VND</td>
+                        <td><?= htmlspecialchars($row['account_name']) ?></td>
+                        <td class="action-buttons">
+                          <form method="post" action="restore.php" onsubmit="return confirm('Khôi phục giao dịch này?');">
+                            <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                            <button type="submit" class="btn-edit">↩️ Khôi phục</button>
+                          </form>
+                          <form method="post" action="hide_transaction.php" onsubmit="return confirm('Ẩn giao dịch này?');">
+                            <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                            <button type="submit" class="btn-delete">🙈 Ẩn</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </main>
+      </div>
+    </div>
+    <script>
+    function toggleGroup(id) {
+      const el = document.getElementById(id);
+      el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+    </script>
 </body>
 </html>
