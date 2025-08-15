@@ -26,7 +26,7 @@ $account_id = $_GET['account_id'] ?? '';
 $sql = "SELECT * FROM transactions WHERE user_id = $1 AND type = 3";
 $params = [$user_id];
 $idx = 2;
-
+$avatar = '';
 if ($from_date) {
   $sql .= " AND DATE(date) >= \$$idx";
   $params[] = $from_date;
@@ -78,8 +78,15 @@ foreach ($accounts as $acc) {
         $totalAccountBalance += $row['balance'];
     }
 }
+$res = pg_query_params($conn, "SELECT username, avatar, fullname, birthyear, email FROM users WHERE id = $1", [$user_id]);
+$user = pg_fetch_assoc($res);
+$avatarFile = $user['avatar'] ?? '';
 $avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && !empty($avatarFile) ? $avatarFile : 'avt_mem.png');
-
+$typeLabels = [
+    1 => 'Thu nhập',
+    2 => 'Chi tiêu',
+    3 => 'Đã xóa'
+];
 ?>
 
 <!DOCTYPE html>
@@ -195,7 +202,7 @@ $avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && 
       display: block;
       margin-top: 8px;
       text-decoration: none;
-      color: var(--primary-color);
+      color: var(--color-primary);
     }
     
     .account-total {
@@ -211,15 +218,15 @@ $avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && 
       display: block;
       margin-top: 12px;
       text-decoration: none;
-      color: var(--text-color);
+      color: var(--color-text);
     }
     
     .sidebar a.active {
       font-weight: bold;
-      color: var(--primary-color);
+      color: var(--color-primary);
     }
     
-    ..content {
+    .content {
       background: var(--color-card);
       padding: var(--spacing);
       border-radius: var(--border-radius);
@@ -283,7 +290,7 @@ $avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && 
     }
     .filter-buttons button,
     .filter-buttons .reset {
-      background-color: var(--primary-color);
+      background-color: var(--color-primary);
       color: white;
       border: none;
       padding: 8px 12px;
@@ -293,7 +300,7 @@ $avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && 
     }
     
     .filter-buttons .reset {
-      background-color: var(--danger-color);
+      background-color: var(--color-danger);
     }
     
     .table-wrapper {
@@ -324,7 +331,7 @@ $avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && 
     }
     
     .deleted-transaction td {
-      color: var(--danger-color);
+      color: var(--color-danger);
     }
     
     .action-buttons {
