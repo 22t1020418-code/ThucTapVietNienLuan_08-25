@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (!empty($error)) {
             echo '<p style="color:red;">' . htmlspecialchars($error) . '</p>';
         }
-        echo '<p>Vui lòng nhập mật khẩu để xác nhận xoá giao dịch khỏi tài khoản <strong>' . htmlspecialchars($account_name ?? 'Không xác định') . '</strong>.</p>';
+        echo '<p>Vui lòng nhập mật khẩu để xác nhận xoá giao dịch khỏi tài khoản <strong>'<br> . htmlspecialchars($account_name ?? 'Không xác định') . '</strong>.</p>';
         echo '<form method="post" style="margin-top: 20px;">';
         echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
         echo '<input type="hidden" name="step" value="delete">';
