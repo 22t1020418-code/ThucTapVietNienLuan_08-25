@@ -2,6 +2,14 @@
 session_start();
 include "db.php";
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['restored'] = "❌ CSRF token không hợp lệ.";
+        header("Location: trash.php");
+        exit();
+    }
+}
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -44,7 +52,16 @@ try {
   
   // Nếu là thu nhập (type = 1) thì cộng, nếu là chi tiêu (type = 2) thì trừ
   $adjustment = ($original_type == 2) ? -$info['amount'] : $info['amount'];
-  
+    
+    $balance_check_sql = "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2";
+    $balance_check_res = pg_query_params($conn, $balance_check_sql, [$info['account_id'], $user_id]);
+    $current_balance = pg_fetch_result($balance_check_res, 0, 0);
+    $new_balance = $current_balance + $adjustment;
+    
+    if ($new_balance < 0) {
+        throw new Exception("Khôi phục sẽ khiến số dư âm.");
+    }
+
   $update_balance_sql = "UPDATE accounts SET balance = balance + $1 WHERE id = $2";
   pg_query_params($conn, $update_balance_sql, [$adjustment, $info['account_id']]);
   
