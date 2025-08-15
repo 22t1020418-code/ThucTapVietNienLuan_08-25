@@ -30,6 +30,10 @@ $error   = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $input_password = $_POST['confirm_password'] ?? '';
+    $sql_balance = "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2";
+    $res_balance = pg_query_params($conn, $sql_balance, [$account_id, $user_id]);
+    $row_balance = pg_fetch_assoc($res_balance);
+    $current_balance = $row_balance['balance'];
 
     // Kiểm tra mật khẩu trước
     if (empty($input_password)) {
@@ -76,11 +80,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     try {
                         // Ghi lịch sử giao dịch
                         $res1 = pg_query_params($conn,
-                            "INSERT INTO transactions (user_id, account_id, type, description, amount, date, created_at)
-                             VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-                            [ $user_id, $account_id, 2, 'Đổi tên khoản tiền thành: ' . $new_name, 0, date('Y-m-d H:i:s') ]
+                            "INSERT INTO transactions (user_id, account_id, type, description, amount, date, created_at, remaining_balance)
+                             VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)",
+                            [ $user_id, $account_id, 2, 'Đổi tên khoản tiền thành: ' . $new_name, 0, date('Y-m-d H:i:s'), $current_balance ]
                         );
-            
+
                         if (!$res1) {
                             throw new Exception("Không thể ghi lịch sử giao dịch.");
                         }
