@@ -21,6 +21,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $transaction_id = $_POST['transaction_id'] ?? null;
+$csrf_token = $_POST['csrf_token'] ?? '';
 
 if (!$transaction_id || !is_numeric($transaction_id)) {
   $_SESSION['restored'] = "❌ Giao dịch không hợp lệ.";
@@ -42,6 +43,9 @@ try {
 
   // Khôi phục: cập nhật type về 1 hoặc 2
   $original_type = pg_fetch_result($check_res, 0, 'original_type');
+    if (!in_array($original_type, [1, 2])) {
+      throw new Exception("Loại giao dịch gốc không hợp lệ.");
+    }
   $restore_sql = "UPDATE transactions SET type = $1 WHERE id = $2";
   $restore_res = pg_query_params($conn, $restore_sql, [ $original_type, $transaction_id ]);
 
@@ -49,10 +53,16 @@ try {
   $info_sql = "SELECT amount, account_id, type FROM transactions WHERE id = $1";
   $info_res = pg_query_params($conn, $info_sql, [$transaction_id]);
   $info = pg_fetch_assoc($info_res);
-  
+  $amount = floatval($info['amount']);
+    if ($amount <= 0) {
+      throw new Exception("Số tiền không hợp lệ.");
+    }
   // Nếu là thu nhập (type = 1) thì cộng, nếu là chi tiêu (type = 2) thì trừ
   $adjustment = ($original_type == 2) ? -$info['amount'] : $info['amount'];
-    
+    if (!$info['account_id']) {
+      throw new Exception("Giao dịch không có tài khoản hợp lệ.");
+    }
+
     $balance_check_sql = "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2";
     $balance_check_res = pg_query_params($conn, $balance_check_sql, [$info['account_id'], $user_id]);
     $current_balance = pg_fetch_result($balance_check_res, 0, 0);
