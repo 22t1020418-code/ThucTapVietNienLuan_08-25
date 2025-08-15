@@ -87,7 +87,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     exit();    
   } catch (Exception $e) {
     pg_query($conn, 'ROLLBACK');
-    $error = "❌ Lỗi: " . htmlspecialchars($e->getMessage());
+    $error = "❌ Lỗi: " . htmlspecialchars($e->getMessage()) . "<br>Vui lòng kiểm tra lại thông tin nhập.";
   }
 }
 ?>
