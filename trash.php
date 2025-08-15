@@ -57,8 +57,27 @@ if (!$res) {
 $deleted_count = pg_num_rows($res);
 $deleted_transactions = pg_fetch_all($res) ?: [];
 
+$grouped = [];
+
+foreach ($deleted_transactions as $tran) {
+    $date = date('Y-m-d', strtotime($tran['date']));
+    if (!isset($grouped[$date])) {
+        $grouped[$date] = [];
+    }
+    $grouped[$date][] = $tran;
+}
+
 // Truy vấn danh sách tài khoản
-$account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_id = $1", [$user_id]);
+$account_res = pg_query_params($conn, "SELECT id, name, balance FROM accounts WHERE user_id = $1", [$user_id]);
+$accounts = pg_fetch_all($account_res) ?: [];
+
+$totalAccountBalance = '0';
+foreach ($accounts as $acc) {
+    $balance_res = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", [$acc['id'], $user_id]);
+    if ($balance_res && $row = pg_fetch_assoc($balance_res)) {
+        $totalAccountBalance = bcadd($totalAccountBalance, $row['balance'], 0);
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -386,7 +405,7 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
                         <td><?= htmlspecialchars($row['account_name']) ?></td>
                         <td class="action-buttons">
                           <form method="post" action="restore.php" style="display:inline;">
-                              <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
+                              <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
                               <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                               <button type="submit" onclick="return confirm('Khôi phục giao dịch này?')">↩️ Khôi phục</button>
                             </form>
