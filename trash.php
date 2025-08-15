@@ -75,7 +75,7 @@ $totalAccountBalance = '0';
 foreach ($accounts as $acc) {
     $balance_res = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", [$acc['id'], $user_id]);
     if ($balance_res && $row = pg_fetch_assoc($balance_res)) {
-        $totalAccountBalance = bcadd($totalAccountBalance, $row['balance'], 0);
+        $totalAccountBalance += $row['balance'];
     }
 }
 ?>
