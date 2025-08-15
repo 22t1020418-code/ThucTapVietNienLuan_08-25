@@ -12,35 +12,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_id = $_SESSION['user_id'];
 
-// Xử lý khôi phục
-$transaction_id = $_POST['transaction_id'] ?? null;
-if ($transaction_id) {
-  $check_sql = "SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND type = 3";
-  $check_res = pg_query_params($conn, $check_sql, [$transaction_id, $user_id]);
-  if (pg_num_rows($check_res) === 1) {
-      
-    // Bước 2: Lấy loại giao dịch hiện tại
-    $get_type_sql = "SELECT type FROM transactions WHERE id = $1 AND user_id = $2";
-    $get_type_res = pg_query_params($conn, $get_type_sql, [$transaction_id, $user_id]);
-    
-    if (pg_num_rows($get_type_res) > 0) {
-        $current_type = pg_fetch_result($get_type_res, 0, 'type');
-    
-        // Cập nhật: lưu loại gốc và đánh dấu là đã xóa
-        $update_sql = "UPDATE transactions SET type = 3, original_type = $1 WHERE id = $2 AND user_id = $3";
-        pg_query_params($conn, $update_sql, [$current_type, $transaction_id, $user_id]);
-    } else {
-        echo "Không tìm thấy giao dịch.";
-    }
-
-    $restore_sql = "UPDATE transactions SET type = 1 WHERE id = $1 AND user_id = $2";
-    pg_query_params($conn, $restore_sql, [$transaction_id, $user_id]);
-    $_SESSION['restored'] = "Giao dịch đã được khôi phục!";
-  }
-  header("Location: trash.php");
-  exit();
-}
-
 // Thông báo khôi phục
 if (!empty($_SESSION['restored'])) {
   echo "<div style='background-color: #fff3cd; color: #856404; padding: 12px; margin: 16px 0; border: 1px solid #ffeeba; border-radius: 6px; font-weight: bold;'>" . $_SESSION['restored'] . "</div>";
@@ -357,24 +328,27 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
     
           <!-- Bộ lọc -->
           <form method="get" class="filter-panel">
-            <div class="filter-row">
-              <div class="filters">
-                <!-- Các bộ lọc giống dashboard -->
-                <!-- from_date, to_date, type, description, account_id -->
-              </div>
-              <div class="filter-summary-row">
-                <div class="stats-inline">
-                  <span>🔼 Tổng thu: <strong><?= number_format($totalThuAll, 0, ',', '.') ?> VND</strong></span>
-                  <span>🔽 Tổng chi: <strong><?= number_format($totalChiAll, 0, ',', '.') ?> VND</strong></span>
+              <div class="filter-row">
+                <div class="filters">
+                  <input type="date" name="from_date" value="<?= htmlspecialchars($from_date) ?>" placeholder="Từ ngày">
+                  <input type="date" name="to_date" value="<?= htmlspecialchars($to_date) ?>" placeholder="Đến ngày">
+                  <input type="text" name="description" value="<?= htmlspecialchars($description) ?>" placeholder="Mô tả">
+                  <select name="account_id">
+                    <option value="">-- Tất cả tài khoản --</option>
+                    <?php foreach ($accounts as $acc): ?>
+                      <option value="<?= $acc['id'] ?>" <?= $account_id == $acc['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($acc['name']) ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
                 <div class="filter-buttons">
                   <button type="submit">🔍 Lọc</button>
                   <a href="trash.php" class="reset">🧹 Làm mới</a>
                 </div>
               </div>
-            </div>
-          </form>
-    
+            </form>
+
           <!-- Bảng giao dịch đã xóa -->
           <?php foreach ($grouped as $label => $entries): ?>
             <div class="date-group">
@@ -411,11 +385,11 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
                         <td><?= number_format($row['remaining_balance'], 0, ',', '.') ?> VND</td>
                         <td><?= htmlspecialchars($row['account_name']) ?></td>
                         <td class="action-buttons">
-                          <form method="post" action="restore.php" onsubmit="return confirm('Khôi phục giao dịch này?');">
-                            <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
-                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                            <button type="submit" class="btn-edit">↩️ Khôi phục</button>
-                          </form>
+                          <form method="post" action="restore.php" style="display:inline;">
+                              <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
+                              <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                              <button type="submit" onclick="return confirm('Khôi phục giao dịch này?')">↩️ Khôi phục</button>
+                            </form>
                           <form method="post" action="hide_transaction.php" onsubmit="return confirm('Ẩn giao dịch này?');">
                             <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
                             <button type="submit" class="btn-delete">🙈 Ẩn</button>
