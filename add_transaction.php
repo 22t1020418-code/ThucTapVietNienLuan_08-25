@@ -4,6 +4,10 @@ include "db.php";
 define('MAX_BALANCE', 100000000);
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
+if (empty($_SESSION['csrf_token'])) {
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_SESSION['user_id'])) {
   header("Location: login.php");
   exit();
@@ -20,11 +24,17 @@ while ($row = pg_fetch_assoc($result)) {
   $accounts[] = $row;
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] === 'POST') {
+  if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    throw new Exception("❌ CSRF token không hợp lệ.");
+  }
   $account_id = intval($_POST['account_id'] ?? 0);
+  if ($account_id <= 0) {
+    throw new Exception("Tài khoản không hợp lệ.");
+  }
   $type = $_POST['type'] ?? '';
   $rawAmount = $_POST['amount'] ?? '';
-  $description = trim($_POST['description'] ?? '');
+  $description = htmlspecialchars(trim($_POST['description'] ?? ''));
   $date_input = $_POST['transaction_date'] ?? '';
   $time_input = $_POST['transaction_time'] ?? date('H:i');
 
@@ -35,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (substr_count($rawAmount, '.') > 1) throw new Exception("Định dạng số tiền không hợp lệ.");
     
     // 🔸 Làm sạch và kiểm tra số tiền
+    $rawAmount = str_replace(',', '', $rawAmount);
     $sanitized = preg_replace('/[^\d.]/', '', $rawAmount);
     if (!is_numeric($sanitized)) throw new Exception("Số tiền không hợp lệ.");
       
@@ -78,12 +89,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       $account_id, $user_id, $type_value, $amount, $description, $new_balance, $datetime
     ]);
     pg_query($conn, 'COMMIT');
-    
-    // Hiển thị thông báo và chuyển hướng bằng JavaScript
     echo "<script>
-        alert('✅ Giao dịch đã được thêm!');
-        window.location.href = 'dashboard.php';
+      alert('✅ Giao dịch đã được thêm!\\nSố dư mới: " . number_format($new_balance, 0, ',', '.') . " VND');
+      window.location.href = 'dashboard.php';
     </script>";
+    exit();
     exit();    
   } catch (Exception $e) {
     pg_query($conn, 'ROLLBACK');
@@ -192,6 +202,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
     <?php endif; ?>
     <form method="post" action="add_transaction.php">
+    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
       <label for="account_id">Khoản tiền:</label>
       <select name="account_id" class="form-control" required>
         <option value="">-- Chọn tài khoản --</option>
