@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_id = $_SESSION['user_id'];
 
-// ✅ Di chuyển xử lý khôi phục lên trước
+// Xử lý khôi phục
 $transaction_id = $_POST['transaction_id'] ?? null;
 if ($transaction_id) {
   $check_sql = "SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND type = 3";
@@ -18,17 +18,17 @@ if ($transaction_id) {
     pg_query_params($conn, $restore_sql, [$transaction_id]);
     $_SESSION['restored'] = "Giao dịch đã được khôi phục!";
   }
-  // ✅ Gọi header trước khi in ra bất kỳ nội dung nào
   header("Location: trash.php");
   exit();
 }
 
-// ✅ Sau khi xử lý xong, mới in ra thông báo
+// Thông báo khôi phục
 if (!empty($_SESSION['restored'])) {
   echo "<div style='background-color: #fff3cd; color: #856404; padding: 12px; margin: 16px 0; border: 1px solid #ffeeba; border-radius: 6px; font-weight: bold;'>" . $_SESSION['restored'] . "</div>";
   unset($_SESSION['restored']);
 }
 
+// Truy vấn giao dịch đã xóa
 $from_date = $_GET['from_date'] ?? '';
 $to_date = $_GET['to_date'] ?? '';
 $description = $_GET['description'] ?? '';
@@ -64,6 +64,11 @@ if (!$res) {
   echo "Lỗi truy vấn cơ sở dữ liệu.";
   exit();
 }
+$deleted_count = pg_num_rows($res);
+$deleted_transactions = pg_fetch_all($res) ?: [];
+
+// Truy vấn danh sách tài khoản
+$account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_id = $1", [$user_id]);
 ?>
 
 <!DOCTYPE html>
@@ -252,55 +257,75 @@ if (!$res) {
         
         <!-- Form lọc theo loại ví -->
         <form method="GET" action="trash.php">
-          <label for="account_id">Lọc theo khoản tiền:</label>
+          <label for="from_date">Từ ngày:</label>
+          <input type="date" name="from_date" id="from_date" value="<?= htmlspecialchars($from_date) ?>">
+        
+          <label for="to_date">Đến ngày:</label>
+          <input type="date" name="to_date" id="to_date" value="<?= htmlspecialchars($to_date) ?>">
+        
+          <label for="description">Mô tả:</label>
+          <input type="text" name="description" id="description" value="<?= htmlspecialchars($description) ?>">
+        
+          <label for="account_id">Khoản tiền:</label>
           <select name="account_id" id="account_id">
             <option value="">-- Tất cả --</option>
-            <option value="cash" <?= $account_id === 'cash' ? 'selected' : '' ?>>Tiền mặt</option>
-            <option value="bank" <?= $account_id === 'bank' ? 'selected' : '' ?>>Ngân hàng</option>
+            <?php while ($row = pg_fetch_assoc($account_res)): ?>
+              <option value="<?= $row['id'] ?>" <?= $account_id == $row['id'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars($row['name']) ?>
+              </option>
+            <?php endwhile; ?>
           </select>
+        
           <button type="submit" class="btn-edit">Lọc</button>
         </form>
+
         
         <!-- Bảng giao dịch đã xóa -->
         <table>
           <thead>
-            <tr>
-              <th>Ngày</th>
-              <th>Loại</th>
-              <th>Số tiền</th>
-              <th>Ghi chú</th>
-              <th>Khoản tiền</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
               <tr>
-                <td colspan="6">Không có giao dịch nào đã xóa.</td>
+                <th>Ngày</th>
+                <th>Giờ</th>
+                <th>Loại</th>
+                <th>Số tiền</th>
+                <th>Số dư còn lại</th>
+                <th>Ghi chú</th>
+                <th>Khoản tiền</th>
+                <th>Thao tác</th>
               </tr>
-            <?php foreach ($deleted_transactions as $txn): ?>
-              <tr class="deleted-transaction">
-                <td><?= htmlspecialchars($txn['date']) ?></td>
-                <td><?= htmlspecialchars($txn['type']) ?></td>
-                <td><?= number_format($txn['amount'], 0, ',', '.') ?>₫</td>
-                <td><?= htmlspecialchars($txn['note']) ?></td>
-                <td><?= htmlspecialchars($txn['account_name']) ?></td>
-                <td>
-                  <form method="POST" action="restore.php" style="display:inline;">
-                    <input type="hidden" name="id" value="<?= $txn['id'] ?>">
-                    <button type="submit" class="btn-edit">Khôi phục</button>
-                  </form>
-                  <form method="POST" action="delete_forever.php" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn?');">
-                    <input type="hidden" name="id" value="<?= $txn['id'] ?>">
-                    <button type="submit" class="btn-delete">Xóa vĩnh viễn</button>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
+            </thead>
+            <tbody>
+            <?php if (empty($deleted_transactions)): ?>
+              <tr><td colspan="8">Không có giao dịch nào đã xóa.</td></tr>
+            <?php else: ?>
+              <?php foreach ($deleted_transactions as $txn): ?>
+                <tr class="deleted-transaction">
+                  <td><?= date('d/m/Y', strtotime($txn['date'])) ?></td>
+                  <td><?= date('H:i:s', strtotime($txn['date'])) ?></td>
+                  <td><?= $txn['type'] == 1 ? 'Thu' : ($txn['type'] == 2 ? 'Chi' : 'Đã xóa') ?></td>
+                  <td><?= number_format($txn['amount'], 0, ',', '.') ?>₫</td>
+                  <td><?= number_format($txn['remaining_balance'], 0, ',', '.') ?>₫</td>
+                  <td><?= htmlspecialchars($txn['description']) ?></td>
+                  <td><?= htmlspecialchars($txn['account_name']) ?></td>
+                  <td>
+                    <form method="POST" action="restore.php" style="display:inline;">
+                        <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
+                        <button type="submit" class="btn-edit">Khôi phục</button>
+                      </form>
+                      <form method="POST" action="delete_forever.php" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn?');">
+                        <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
+                        <button type="submit" class="btn-delete">Xóa vĩnh viễn</button>
+                      </form>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
         </table>
       </section>
     </main>
   </div>
 </body>
 </html>
+<td>
+                
 
