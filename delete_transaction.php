@@ -82,9 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '</form>';
         echo '</div>';
         exit;
-    }
-
-    elseif ($step === "delete") {
+    } elseif ($step === "delete") {
     $entered_password = $_POST["password"] ?? "";
 
     // Kiểm tra mật khẩu
@@ -119,7 +117,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo "<p style='color:red;'>Lỗi khi xoá: " . htmlspecialchars($e->getMessage()) . "</p>";
         exit;
       }
-    }
     }
 }
 ?>
