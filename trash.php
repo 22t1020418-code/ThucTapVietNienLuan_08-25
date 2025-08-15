@@ -2,6 +2,10 @@
 session_start();
 include "db.php";
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -406,6 +410,7 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
                   <td>
                     <form method="POST" action="restore.php" style="display:inline;">
                         <input type="hidden" name="transaction_id" value="<?= $txn['id'] ?>">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                         <button type="submit" class="btn-edit">Khôi phục</button>
                       </form>
                       <form method="POST" action="delete_forever.php" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn?');">
