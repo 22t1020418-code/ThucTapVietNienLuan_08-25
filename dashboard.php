@@ -3,6 +3,10 @@ session_start();
 include "db.php";
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!function_exists('bcadd')) {
     function bcadd($left_operand, $right_operand, $scale = 2) {
         // Fallback dùng toán học thường (không hoàn toàn chính xác với số lớn)
@@ -892,11 +896,13 @@ $typeLabels = [
                                     <form method="post" action="delete_transaction.php" style="display:inline;">
                                       <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                       <input type="hidden" name="step" value="info">
+                                      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                       <button type="submit" class="btn-delete">🗑️ Xoá</button>
                                     </form>
                                   <?php elseif ($row['type'] == 3): ?>
                                     <form method="post" action="restore.php" style="display:inline;" onsubmit="return confirm('Khôi phục giao dịch này?');">
                                       <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                                      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                       <button type="submit" class="btn-edit">↩️ Khôi phục</button>
                                     </form>
                                     <form method="post" action="hide_transaction.php" style="display:inline;" onsubmit="return confirm('Ẩn giao dịch này?');">
