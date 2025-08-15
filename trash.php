@@ -96,12 +96,12 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
     
       /* Sidebar */
       .sidebar {
-        width: 220px;
-        background-color: #2c3e50;
-        color: white;
-        padding: 20px;
-      }
-    
+          width: 220px;
+          background-color: #2c3e50;
+          color: white;
+          padding: 24px;
+          font-size: 16px;
+        }
       .sidebar h2 {
         font-size: 18px;
         margin-bottom: 16px;
@@ -116,19 +116,23 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
         margin-bottom: 12px;
       }
     
-      .sidebar ul li a {
-        color: white;
-        text-decoration: none;
-        display: block;
-        padding: 8px 12px;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-      }
-    
+     .sidebar ul li a {
+          color: white;
+          text-decoration: none;
+          display: block;
+          padding: 10px 14px;
+          border-radius: 6px;
+          transition: background-color 0.3s ease;
+        }
+        .sidebar ul li.active a {
+          background-color: #1abc9c;
+          color: white;
+        }
       .sidebar ul li.active a,
-      .sidebar ul li a:hover {
-        background-color: #34495e;
-      }
+        .sidebar ul li a:hover {
+          background-color: #1abc9c;
+          color: white;
+        }
     
       /* Main content */
       .main-content {
@@ -142,9 +146,10 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
       }
     
       .header p {
-        color: #7f8c8d;
-        margin-bottom: 24px;
-      }
+          font-size: 16px;
+          color: #7f8c8d;
+          margin-bottom: 24px;
+        }
     
       .content {
         background-color: white;
@@ -219,7 +224,77 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
         font-weight: bold;
         animation: fadeOut 4s ease forwards;
       }
-    
+        form {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          margin-bottom: 20px;
+          align-items: center;
+        }
+        
+        form label {
+          min-width: 80px;
+          font-weight: bold;
+        }
+        
+        form input, form select {
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          min-width: 160px;
+        }
+        td:last-child {
+          text-align: center;
+        }
+        .header .user {
+          display: flex;
+          align-items: center;
+        }  
+        .header .user a {
+          display: flex;
+          align-items: center;
+          text-decoration: none;
+          color: white;
+        }
+        .header .user span {
+          font-weight: bold;
+        }
+        .header .user img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          margin-left: 10px;
+          object-fit: cover;
+          border: 2px solid white;
+        } 
+        .profile-link img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-left: 10px;
+          border: 2px solid white;
+        }
+        .avatar-img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid white;
+        }
+        .sidebar-header {
+          margin-bottom: 24px;
+          text-align: center;
+        }
+        .sidebar-header h1 {
+          font-size: 20px;
+          margin-bottom: 6px;
+          color: #ecf0f1;
+        }
+        .sidebar-header p {
+          font-size: 14px;
+          color: #bdc3c7;
+        }
       @keyframes fadeOut {
         0% { opacity: 1; }
         80% { opacity: 1; }
@@ -231,6 +306,13 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
   <div class="container">
     <!-- Sidebar -->
     <aside class="sidebar">
+        <div class="user">
+        <a href="profile.php" class="profile-link">
+          <span>Xin chào, <?= htmlspecialchars($user['fullname'] ?? '') ?></span>
+          <img src="<?= $avatarPath ?>" alt="Avatar" class="avatar-img">
+        </a>
+      </div>
+    </div>
       <h2>📁 Menu</h2>
       <ul>
         <li><a href="dashboard.php">🏠 Dashboard</a></li>
