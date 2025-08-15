@@ -105,9 +105,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           ? "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3"
           : "UPDATE accounts SET balance = balance - $1 WHERE id = $2 AND user_id = $3";
         pg_query_params($conn, $adjust_query, [$amount, $account_id, $user_id]);
-    
-        // Xoá giao dịch
-        pg_query_params($conn, "DELETE FROM transactions WHERE id = $1 AND user_id = $2", [$transaction_id, $user_id]);
+
+        pg_query_params($conn, "UPDATE transactions SET type = 3, is_hidden = FALSE WHERE id = $1 AND user_id = $2", [$transaction_id, $user_id]);
     
         pg_query($conn, "COMMIT");
         header("Location: dashboard.php?deleted=1");
