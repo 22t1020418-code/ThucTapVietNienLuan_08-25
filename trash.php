@@ -2,12 +2,7 @@
 session_start();
 include "db.php";
 
-if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-    $_SESSION['restored'] = "❌ CSRF token không hợp lệ.";
-    header("Location: trash.php");
-    exit();
-}
-if (empty($_SESSION['csrf_token'])) {
+if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
