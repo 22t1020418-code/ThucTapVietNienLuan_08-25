@@ -4,6 +4,10 @@ include "db.php";
 define('MAX_BALANCE', 100000000);
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -14,6 +18,10 @@ $error = "";
 
 // Xử lý form
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $csrf_token)) {
+        $error = "CSRF token không hợp lệ. Vui lòng thử lại.";
+    }
     $name     = trim($_POST['name']);
     $rawBal   = $_POST['balance'] ?? '0';
 
@@ -168,6 +176,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <?php endif; ?>
 
         <form method="post" id="createAccountForm">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             <div class="form-group">
                 <label for="name">Tên khoản tiền:</label>
                 <input type="text" id="name" name="name" maxlength="30" required>
