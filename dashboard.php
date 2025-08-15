@@ -747,7 +747,7 @@ $typeLabels = [
         </div>
         <hr>
         <a href="advanced_statistics.php">📊 Thống kê nâng cao</a>
-        <a href="trash.php" class="active">🗑️ Thùng rác</a>
+        <a href="trash.php" class="active">🗑️ Giao dịch đã xóa</a>
         <a href="feedback.php">📩 Gửi phản hồi</a>
         <?php if ($user['role'] === 'admin'): ?>
           <a href="admin_feedback.php">📬 Xem phản hồi</a>
