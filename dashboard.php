@@ -144,7 +144,8 @@ foreach ($transactions as $t) {
 $typeLabels = [
     0 => 'Thu',
     1 => 'Chi',
-    2 => 'Cập nhật tài khoản'
+    2 => 'Cập nhật tài khoản',
+    3 => 'Xóa tài khoản'
 ];
 ?>
 
@@ -695,6 +696,11 @@ $typeLabels = [
       grid-template-columns: repeat(5, 1fr);
       gap: 16px;
     }
+    .deleted-transaction {
+        background-color: #ffecec;
+        color: #d00;
+        font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -760,6 +766,7 @@ $typeLabels = [
                   <option value="0" <?= $filter_type === '0'? 'selected':'' ?>>Thu</option>
                   <option value="1" <?= $filter_type === '1'? 'selected':'' ?>>Chi</option>
                   <option value="2" <?= $filter_type === '2'? 'selected':'' ?>>Cập nhật</option>
+                  <option value="3" <?= $filter_type === '3'? 'selected':'' ?>>Xóa</option>
                 </select>
               </div>
               <div class="form-group">
@@ -856,8 +863,11 @@ $typeLabels = [
                               if (strpos($d, 'Tạo tài khoản mới:')===0) {
                                 $d = 'Tạo khoản tiền mới';
                               }
+                            if ($row['type'] == 3) {
+                                    $d = '🗑️ ' . $d;
+                                }
                             ?>
-                            <tr>
+                            <tr class="<?= $row['type'] == 3 ? 'deleted-transaction' : '' ?>">
                               <td><?= date('H:i:s', strtotime($row['date'])) ?></td>
                               <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
                               <td><?= htmlspecialchars($d ?: '-') ?></td>
@@ -867,16 +877,16 @@ $typeLabels = [
                               <td><?= number_format($row['remaining_balance']??0,0,',','.') ?> VND</td>
                               <td><?= htmlspecialchars($row['account_name']) ?></td>
                               <td class="action-buttons">
-                                  <?php if ($row['type'] != 2): ?>
+                                  <?php if ($row['type'] == 0 || $row['type'] == 1): ?>
                                     <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
                                     <form method="post" action="delete_transaction.php" style="display:inline;">
-                                      <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                      <input type="hidden" name="step" value="info">
-                                      <button type="submit" class="btn-delete">🗑️ Xoá</button>
+                                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                        <input type="hidden" name="step" value="info">
+                                        <button type="submit" class="btn-delete">🗑️ Xoá</button>
                                     </form>
-                                  <?php else: ?>
+                                <?php else: ?>
                                     <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
-                                  <?php endif; ?>
+                                <?php endif; ?>
                                 </td>
                             </tr>
                           <?php endforeach; ?>
