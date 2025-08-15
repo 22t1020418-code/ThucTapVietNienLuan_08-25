@@ -409,10 +409,11 @@ foreach ($accounts as $acc) {
                               <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                               <button type="submit" onclick="return confirm('Khôi phục giao dịch này?')">↩️ Khôi phục</button>
                             </form>
-                          <form method="post" action="hide_transaction.php" onsubmit="return confirm('Ẩn giao dịch này?');">
-                            <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
-                            <button type="submit" class="btn-delete">🙈 Ẩn</button>
-                          </form>
+                          <form method="post" action="delete_forever.php" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn giao dịch này?');" style="display:inline;">
+                              <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                              <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                              <button type="submit" class="btn-delete">🗑️ Xóa vĩnh viễn</button>
+                            </form>
                         </td>
                       </tr>
                     <?php endforeach; ?>
