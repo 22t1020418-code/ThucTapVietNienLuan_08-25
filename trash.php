@@ -6,24 +6,34 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
+$user_id = $_SESSION['user_id'];
+
+// ✅ Di chuyển xử lý khôi phục lên trước
+$transaction_id = $_POST['transaction_id'] ?? null;
+if ($transaction_id) {
+  $check_sql = "SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND type = 3";
+  $check_res = pg_query_params($conn, $check_sql, [$transaction_id, $user_id]);
+  if (pg_num_rows($check_res) === 1) {
+    $restore_sql = "UPDATE transactions SET type = 1 WHERE id = $1";
+    pg_query_params($conn, $restore_sql, [$transaction_id]);
+    $_SESSION['restored'] = "Giao dịch đã được khôi phục!";
+  }
+  // ✅ Gọi header trước khi in ra bất kỳ nội dung nào
+  header("Location: trash.php");
+  exit();
+}
+
+// ✅ Sau khi xử lý xong, mới in ra thông báo
 if (!empty($_SESSION['restored'])) {
-    echo "<div style='
-        background-color: #fff3cd;
-        color: #856404;
-        padding: 12px;
-        margin: 16px 0;
-        border: 1px solid #ffeeba;
-        border-radius: 6px;
-        font-weight: bold;
-    '>" . $_SESSION['restored'] . "</div>";
-    unset($_SESSION['restored']);
+  echo "<div style='background-color: #fff3cd; color: #856404; padding: 12px; margin: 16px 0; border: 1px solid #ffeeba; border-radius: 6px; font-weight: bold;'>" . $_SESSION['restored'] . "</div>";
+  unset($_SESSION['restored']);
 }
 
 $from_date = $_GET['from_date'] ?? '';
 $to_date = $_GET['to_date'] ?? '';
 $description = $_GET['description'] ?? '';
 $wallet_type = $_GET['wallet_type'] ?? '';
-$sql = "SELECT * FROM transactions WHERE user_id = $1 AND type = 3 ORDER BY date DESC";
+$sql = "SELECT * FROM transactions WHERE user_id = $1 AND type = 3";
 $params = [$user_id];
 $idx = 2;
 
@@ -50,25 +60,10 @@ if ($wallet_type) {
 
 $sql .= " ORDER BY date DESC";
 $res = pg_query_params($conn, $sql, $params);
-
-$transaction_id = $_POST['transaction_id'] ?? null;
-$user_id = $_SESSION['user_id'];
-
-if ($transaction_id) {
-    // Kiểm tra giao dịch có tồn tại và thuộc về user
-    $check_sql = "SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND type = 3";
-    $check_res = pg_query_params($conn, $check_sql, [ $transaction_id, $user_id ]);
-
-    if (pg_num_rows($check_res) === 1) {
-        // Khôi phục: cập nhật type về 1
-        $restore_sql = "UPDATE transactions SET type = 1 WHERE id = $1";
-        pg_query_params($conn, $restore_sql, [ $transaction_id ]);
-    }
+if (!$res) {
+  echo "Lỗi truy vấn cơ sở dữ liệu.";
+  exit();
 }
-
-header("Location: trash.php");
-exit();
-
 ?>
 
 <!DOCTYPE html>
