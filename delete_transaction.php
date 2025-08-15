@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (!empty($error)) {
             echo '<p style="color:red;">' . htmlspecialchars($error) . '</p>';
         }
-        echo '<p>Vui lòng nhập mật khẩu để xác nhận xoá giao dịch khỏi tài khoản <strong>'<br> . htmlspecialchars($account_name ?? 'Không xác định') . '</strong>.</p>';
+        echo '<p>Vui lòng nhập mật khẩu để xác nhận xoá giao dịch khỏi tài khoản <strong>' . htmlspecialchars($account_name ?? 'Không xác định') . '</strong>.</p>';
         echo '<form method="post" style="margin-top: 20px;">';
         echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
         echo '<input type="hidden" name="step" value="delete">';
@@ -101,13 +101,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       pg_query($conn, "BEGIN");
       try {
         // Cập nhật số dư
-        $adjust_query = ($type == 1)
-          ? "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3"
-          : "UPDATE accounts SET balance = balance - $1 WHERE id = $2 AND user_id = $3";
-        pg_query_params($conn, $adjust_query, [$amount, $account_id, $user_id]);
-
-        pg_query_params($conn, "UPDATE transactions SET type = 3, is_hidden = FALSE WHERE id = $1 AND user_id = $2", [$transaction_id, $user_id]);
-    
+        $delete_sql = "UPDATE transactions SET type = 3, original_type = $1 WHERE id = $2 AND user_id = $3";
+        pg_query_params($conn, $delete_sql, [ $type, $transaction_id, $user_id ]);
+        
+        $adjustment = ($type == 1) ? -$amount : $amount;
+        $update_balance_sql = "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3";
+        pg_query_params($conn, $update_balance_sql, [ $adjustment, $account_id, $user_id ]);
+        
         pg_query($conn, "COMMIT");
         header("Location: dashboard.php?deleted=1");
         exit;
