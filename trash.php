@@ -2,6 +2,11 @@
 session_start();
 include "db.php";
 
+if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    $_SESSION['restored'] = "❌ CSRF token không hợp lệ.";
+    header("Location: trash.php");
+    exit();
+}
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -342,6 +347,12 @@ foreach ($accounts as $acc) {
       <div class="content">
         <main class="main">
           <div class="content-header">
+              <?php if (!empty($_SESSION['restored'])): ?>
+                  <div style="background-color: #f8d7da; color: #721c24; padding: 12px; margin-bottom: 16px; border: 1px solid #f5c6cb; border-radius: 6px;">
+                    <?= htmlspecialchars($_SESSION['restored']) ?>
+                  </div>
+                  <?php unset($_SESSION['restored']); ?>
+                <?php endif; ?>
             <h2>Lịch sử giao dịch đã xóa</h2>
           </div>
     
