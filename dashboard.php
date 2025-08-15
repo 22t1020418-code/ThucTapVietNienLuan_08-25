@@ -30,8 +30,9 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
-$sql .= " AND (t.is_hidden IS FALSE OR t.is_hidden IS NULL)";
 $user_id = $_SESSION['user_id'];
+$sql = "SELECT t.*, COALESCE(a.name,'[Không xác định]') AS account_name FROM transactions t LEFT JOIN accounts a ON t.account_id = a.id WHERE t.user_id = $1";
+$sql .= " AND (t.is_hidden IS FALSE OR t.is_hidden IS NULL)";
 $sql_feedback = "SELECT id, message, status FROM feedbacks WHERE user_id = $1 AND status != 'pending' ORDER BY created_at DESC LIMIT 1";
 $res_feedback = pg_query_params($conn, $sql_feedback, [$user_id]);
 $feedback_popup = pg_fetch_assoc($res_feedback);
