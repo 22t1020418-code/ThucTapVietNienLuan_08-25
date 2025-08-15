@@ -312,7 +312,6 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
           <img src="<?= $avatarPath ?>" alt="Avatar" class="avatar-img">
         </a>
       </div>
-    </div>
       <h2>📁 Menu</h2>
       <ul>
         <li><a href="dashboard.php">🏠 Dashboard</a></li>
@@ -401,13 +400,11 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
                   </td>
                 </tr>
               <?php endforeach; ?>
-            </tbody>
+            <?php endif; ?>
+        </tbody>
         </table>
       </section>
     </main>
   </div>
 </body>
 </html>
-<td>
-                
-
