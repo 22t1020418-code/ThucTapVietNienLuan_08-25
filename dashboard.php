@@ -9,6 +9,10 @@ if (!function_exists('bcadd')) {
         return number_format($left_operand + $right_operand, $scale, '.', '');
     }
 }
+if (!empty($_SESSION['restored'])) {
+  echo "<div class='popup-feedback'>" . $_SESSION['restored'] . "</div>";
+  unset($_SESSION['restored']);
+}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['hide_feedback'])) {
     $feedback_id = $_POST['feedback_id'] ?? 0;
@@ -734,6 +738,7 @@ $typeLabels = [
         </div>
         <hr>
         <a href="advanced_statistics.php">📊 Thống kê nâng cao</a>
+        <a href="trash.php" class="active">🗑️ Thùng rác</a>
         <a href="feedback.php">📩 Gửi phản hồi</a>
         <?php if ($user['role'] === 'admin'): ?>
           <a href="admin_feedback.php">📬 Xem phản hồi</a>
@@ -880,13 +885,18 @@ $typeLabels = [
                                   <?php if ($row['type'] == 0 || $row['type'] == 1): ?>
                                     <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
                                     <form method="post" action="delete_transaction.php" style="display:inline;">
-                                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                        <input type="hidden" name="step" value="info">
-                                        <button type="submit" class="btn-delete">🗑️ Xoá</button>
+                                      <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                      <input type="hidden" name="step" value="info">
+                                      <button type="submit" class="btn-delete">🗑️ Xoá</button>
                                     </form>
-                                <?php else: ?>
+                                  <?php elseif ($row['type'] == 3): ?>
+                                    <form method="post" action="restore.php" style="display:inline;" onsubmit="return confirm('Khôi phục giao dịch này?');">
+                                      <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                                      <button type="submit" class="btn-edit">↩️ Khôi phục</button>
+                                    </form>
+                                  <?php else: ?>
                                     <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
-                                <?php endif; ?>
+                                  <?php endif; ?>
                                 </td>
                             </tr>
                           <?php endforeach; ?>
