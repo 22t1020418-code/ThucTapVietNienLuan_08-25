@@ -31,6 +31,16 @@ try {
   // Khôi phục: cập nhật type về 1 (hoặc 2 nếu bạn có phân loại)
   $restore_sql = "UPDATE transactions SET type = 1 WHERE id = $1";
   $restore_res = pg_query_params($conn, $restore_sql, [ $transaction_id ]);
+  
+  $info_sql = "SELECT amount, account_id, type FROM transactions WHERE id = $1";
+  $info_res = pg_query_params($conn, $info_sql, [$transaction_id]);
+  $info = pg_fetch_assoc($info_res);
+  
+  // Nếu là thu nhập (type = 1) thì cộng, nếu là chi tiêu (type = 2) thì trừ
+  $adjustment = ($info['type'] == 2) ? -$info['amount'] : $info['amount'];
+  
+  $update_balance_sql = "UPDATE accounts SET balance = balance + $1 WHERE id = $2";
+  pg_query_params($conn, $update_balance_sql, [$adjustment, $info['account_id']]);
 
   if (!$restore_res) {
     throw new Exception("Không thể khôi phục giao dịch.");
