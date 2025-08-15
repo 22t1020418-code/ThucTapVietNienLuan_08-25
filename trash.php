@@ -14,8 +14,23 @@ if ($transaction_id) {
   $check_sql = "SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND type = 3";
   $check_res = pg_query_params($conn, $check_sql, [$transaction_id, $user_id]);
   if (pg_num_rows($check_res) === 1) {
-    $restore_sql = "UPDATE transactions SET type = 1 WHERE id = $1";
-    pg_query_params($conn, $restore_sql, [$transaction_id]);
+      
+    // Bước 2: Lấy loại giao dịch hiện tại
+    $get_type_sql = "SELECT type FROM transactions WHERE id = $1 AND user_id = $2";
+    $get_type_res = pg_query_params($conn, $get_type_sql, [$transaction_id, $user_id]);
+    
+    if (pg_num_rows($get_type_res) > 0) {
+        $current_type = pg_fetch_result($get_type_res, 0, 'type');
+    
+        // Cập nhật: lưu loại gốc và đánh dấu là đã xóa
+        $update_sql = "UPDATE transactions SET type = 3, original_type = $1 WHERE id = $2 AND user_id = $3";
+        pg_query_params($conn, $update_sql, [$current_type, $transaction_id, $user_id]);
+    } else {
+        echo "Không tìm thấy giao dịch.";
+    }
+
+    $restore_sql = "UPDATE transactions SET type = 1 WHERE id = $1 AND user_id = $2";
+    pg_query_params($conn, $restore_sql, [$transaction_id, $user_id]);
     $_SESSION['restored'] = "Giao dịch đã được khôi phục!";
   }
   header("Location: trash.php");
@@ -365,8 +380,8 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
         <table>
           <thead>
               <tr>
-                <th>Ngày</th>
-                <th>Giờ</th>
+                <th>Ngày tạo</th>
+                <th>Ngày xóa</th>
                 <th>Loại</th>
                 <th>Số tiền</th>
                 <th>Số dư còn lại</th>
@@ -381,9 +396,9 @@ $account_res = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_
             <?php else: ?>
               <?php foreach ($deleted_transactions as $txn): ?>
                 <tr class="deleted-transaction">
-                  <td><?= date('d/m/Y', strtotime($txn['date'])) ?></td>
-                  <td><?= date('H:i:s', strtotime($txn['date'])) ?></td>
-                  <td><?= $txn['type'] == 1 ? 'Thu' : ($txn['type'] == 2 ? 'Chi' : 'Đã xóa') ?></td>
+                  <td><?= date('d/m/Y H:i:s', strtotime($txn['date'])) ?></td>
+                  <td><?= isset($txn['deleted_at']) ? date('d/m/Y H:i:s', strtotime($txn['deleted_at'])) : 'Không rõ' ?></td>
+                  <td><?= $txn['original_type'] == 1 ? 'Thu' : ($txn['original_type'] == 2 ? 'Chi' : 'Không rõ') ?></td>
                   <td><?= number_format($txn['amount'], 0, ',', '.') ?>₫</td>
                   <td><?= number_format($txn['remaining_balance'], 0, ',', '.') ?>₫</td>
                   <td><?= htmlspecialchars($txn['description']) ?></td>
