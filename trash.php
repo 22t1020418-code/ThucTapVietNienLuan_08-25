@@ -78,6 +78,8 @@ foreach ($accounts as $acc) {
         $totalAccountBalance += $row['balance'];
     }
 }
+$avatarPath = 'uploads/' . (file_exists(__DIR__ . '/uploads/' . $avatarFile) && !empty($avatarFile) ? $avatarFile : 'avt_mem.png');
+
 ?>
 
 <!DOCTYPE html>
@@ -87,36 +89,50 @@ foreach ($accounts as $acc) {
   <title>🗑️ Giao dịch đã xóa</title>
     <style>
     :root {
-      --primary-color: #4CAF50;
-      --secondary-color: #f1f1f1;
-      --text-color: #333;
-      --border-color: #ddd;
-      --hover-color: #e0e0e0;
-      --danger-color: #e74c3c;
-      --income-color: #2ecc71;
-      --expense-color: #e67e22;
-      --font-family: 'Segoe UI', sans-serif;
+      --color-primary: #1e88e5;
+      --color-danger: #e53935;
+      --color-bg: #f9fafb;
+      --color-card: #ffffff;
+      --color-text: #2e3d49;
+      --color-muted: #64748b;
+      --border-radius: 8px;
+      --spacing: 16px;
+      --transition-speed: 0.3s;
     }
-    
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: var(--font-family);
-      background-color: var(--secondary-color);
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
     }
     
     .header {
-      background-color: var(--primary-color);
+      background: var(--color-primary);
       color: white;
-      padding: 16px;
+      padding: 12px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    
+    .header .user {
+      display: flex;
+      align-items: center;
+    }
     .header h2 {
       margin: 0;
     }
-    
+    .header .user img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-left: 10px;
+      object-fit: cover;
+      border: 2px solid white;
+    }
     .user {
       display: flex;
       align-items: center;
@@ -137,34 +153,44 @@ foreach ($accounts as $acc) {
     }
     
     .dashboard-wrapper {
-      display: flex;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: var(--spacing);
+      padding: var(--spacing);
     }
-    
+        
     .sidebar {
-      width: 240px;
-      background-color: white;
-      padding: 16px;
-      border-right: 1px solid var(--border-color);
+      background: var(--color-card);
+      padding: var(--spacing);
+      border-radius: var(--border-radius);
     }
     
     .sidebar h3 {
-      margin-top: 0;
+      font-size: 0.9rem;
+      color: var(--color-muted);
+      margin-bottom: 8px;
     }
     
     .account-card {
       display: block;
-      padding: 8px;
+      background: var(--color-bg);
+      padding: 12px;
+      border-radius: var(--border-radius);
       margin-bottom: 8px;
-      background-color: var(--secondary-color);
-      border-radius: 4px;
-      text-decoration: none;
-      color: var(--text-color);
+      border: 1px solid #e2e8f0;
+      transition: background var(--transition-speed);
     }
     
     .account-card:hover {
-      background-color: var(--hover-color);
+      background: #ebf4ff;
     }
-    
+    .account-name {
+      font-weight: 600;
+    }    
+    .account-balance {
+      font-size: 0.85rem;
+      color: var(--color-text);
+    }
     .add-account {
       display: block;
       margin-top: 8px;
@@ -174,9 +200,13 @@ foreach ($accounts as $acc) {
     
     .account-total {
       margin-top: 16px;
-      font-weight: bold;
+      padding: 12px;
+      background: #ecfdf3;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--border-radius);
+      font-weight: 600;
     }
-    
+        
     .sidebar a {
       display: block;
       margin-top: 12px;
@@ -189,9 +219,10 @@ foreach ($accounts as $acc) {
       color: var(--primary-color);
     }
     
-    .content {
-      flex-grow: 1;
-      padding: 24px;
+    ..content {
+      background: var(--color-card);
+      padding: var(--spacing);
+      border-radius: var(--border-radius);
     }
     
     .content-header h2 {
@@ -199,26 +230,41 @@ foreach ($accounts as $acc) {
     }
     
     .filter-panel {
-      background-color: white;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 24px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      background: var(--color-card);
+      padding: var(--spacing);
+      border-radius: var(--border-radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: var(--spacing);
     }
-    
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
     .filter-row {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
     }
-    
+    .filter-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
     .filters {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
     }
-    
+    .filter-buttons button {
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+    }
     .filter-summary-row {
       display: flex;
       justify-content: space-between;
@@ -230,7 +276,11 @@ foreach ($accounts as $acc) {
     .stats-inline span {
       margin-right: 16px;
     }
-    
+    .filter-buttons .reset {
+      background: #f1f5f9;
+      color: var(--color-text);
+      border: 1px solid #cbd5e1;
+    }
     .filter-buttons button,
     .filter-buttons .reset {
       background-color: var(--primary-color);
@@ -248,25 +298,29 @@ foreach ($accounts as $acc) {
     
     .table-wrapper {
       overflow-x: auto;
-      background-color: white;
-      border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
     
     table {
       width: 100%;
       border-collapse: collapse;
+      background: var(--color-card);
+      border-radius: var(--border-radius);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     
     th, td {
       padding: 12px;
-      border-bottom: 1px solid var(--border-color);
       text-align: left;
     }
-    
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
     tr:hover {
-      background-color: var(--hover-color);
+      background: #eef2f7;
     }
     
     .deleted-transaction td {
@@ -286,34 +340,42 @@ foreach ($accounts as $acc) {
       cursor: pointer;
       color: white;
     }
-    
+    .deleted-transaction {
+      background-color: #ffecec;
+      color: var(--color-danger);
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
     .btn-edit {
-      background-color: #e3f2fd;
+      background: #e3f2fd;
       color: #1565c0;
       padding: 6px 10px;
       border-radius: 4px;
       font-size: 14px;
       text-decoration: none;
-      margin-right: 8px;
     }
     
     .btn-delete {
       background-color: #ffebee;
       color: #c62828;
       padding: 6px 10px;
+      font-size: 14px;
+      border: none;
       border-radius: 4px;
-      font-size: 14px;
-      border: none;
       cursor: pointer;
+      font-weight: 500;
     }
-    
+    .btn-delete:hover {
+      background-color: #ffcdd2;
+    }
     .toggle-btn {
-      background-color: transparent;
-      border: none;
-      color: var(--primary-color);
-      cursor: pointer;
+      margin-left: 12px;
+      padding: 4px 8px;
       font-size: 14px;
-      margin-top: 8px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
     </style>
 </head>
@@ -324,7 +386,7 @@ foreach ($accounts as $acc) {
       <div class="user">
         <a href="profile.php" class="profile-link">
           <span>Xin chào, <?= htmlspecialchars($user['fullname'] ?? '') ?></span>
-          <img src="<?= $avatarPath ?>" alt="Avatar" class="avatar-img">
+          <img src="<?= $avatarPath ?>" alt="Avatar">
         </a>
       </div>
     </div>
