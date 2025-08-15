@@ -30,7 +30,7 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
-
+$sql .= " AND (t.is_hidden IS FALSE OR t.is_hidden IS NULL)";
 $user_id = $_SESSION['user_id'];
 $sql_feedback = "SELECT id, message, status FROM feedbacks WHERE user_id = $1 AND status != 'pending' ORDER BY created_at DESC LIMIT 1";
 $res_feedback = pg_query_params($conn, $sql_feedback, [$user_id]);
@@ -534,6 +534,10 @@ $typeLabels = [
       font-weight: bold;
       margin-left: auto;
     }
+    .deleted-transaction td {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
     /* 6. Responsive */
     @media (max-width: 992px) {
       .dashboard-wrapper .sidebar.open {
@@ -893,6 +897,10 @@ $typeLabels = [
                                     <form method="post" action="restore.php" style="display:inline;" onsubmit="return confirm('Khôi phục giao dịch này?');">
                                       <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
                                       <button type="submit" class="btn-edit">↩️ Khôi phục</button>
+                                    </form>
+                                    <form method="post" action="hide_transaction.php" style="display:inline;" onsubmit="return confirm('Ẩn giao dịch này?');">
+                                        <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                                        <button type="submit" class="btn-delete">🙈 Ẩn</button>
                                     </form>
                                   <?php else: ?>
                                     <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
