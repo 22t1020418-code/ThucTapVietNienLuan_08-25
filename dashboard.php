@@ -154,7 +154,7 @@ $typeLabels = [
     0 => 'Thu',
     1 => 'Chi',
     2 => 'Cập nhật tài khoản',
-    3 => 'Xóa tài khoản'
+    3 => 'Xóa giao dịch'
 ];
 ?>
 
