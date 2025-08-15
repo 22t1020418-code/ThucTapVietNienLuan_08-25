@@ -87,11 +87,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 } else {
                     pg_query($conn, 'BEGIN');
                     try {
+                        $prefix = 'Đổi tên thành: ';
+                        $desc = $prefix . $new_name;
+                        
+                        // Giới hạn độ dài tối đa 30 ký tự
+                        if (mb_strlen($desc) > 30) {
+                            $desc = mb_substr($desc, 0, 30);
+                        }
                         // Ghi lịch sử giao dịch
                         $res1 = pg_query_params($conn,
                             "INSERT INTO transactions (user_id, account_id, type, description, amount, date, created_at, remaining_balance)
                              VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)",
-                            [ $user_id, $account_id, 2, 'Đổi tên khoản tiền thành: ' . $new_name, 0, date('Y-m-d H:i:s'), $current_balance ]
+                            [ $user_id, $account_id, 2, $desc, 0, date('Y-m-d H:i:s'), $current_balance ]
                         );
 
                         if (!$res1) {
@@ -244,6 +251,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </head>
     <body>
       <div class="container">
+        <?php
+            if (isset($_GET['renamed'])) {
+                echo "<div class='alert alert-success alert-dismissible fade show' role='alert'>
+                    ✅ Đã đổi tên khoản tiền thành công.
+                    <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
+                  </div>";
+            }
+        ?>
         <h2>✏️ Đổi tên khoản tiền</h2>
     
         <form method="post" id="balanceForm">
