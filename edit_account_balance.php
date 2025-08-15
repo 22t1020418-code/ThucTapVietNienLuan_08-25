@@ -50,6 +50,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if (isset($_POST['delete_account']) && $_POST['delete_account'] === 'yes') {
                 pg_query($conn, 'BEGIN');
                 try {
+                    $res_log = pg_query_params($conn,
+                        "INSERT INTO transactions (user_id, account_id, type, description, amount, date, created_at, remaining_balance)
+                         VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)",
+                        [ $user_id, $account_id, 3, '🗑️ Xóa khoản tiền', 0, date('Y-m-d H:i:s'), $current_balance ]
+                    );
+                    
+                    if (!$res_log) {
+                        throw new Exception("Không thể ghi lịch sử xóa khoản tiền.");
+                    }
                     pg_query_params($conn,
                         "DELETE FROM transactions WHERE account_id = $1 AND user_id = $2",
                         [ $account_id, $user_id ]
@@ -63,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     exit();
                 } catch (Exception $e) {
                     pg_query($conn, 'ROLLBACK');
-                    $error = "❌ Lỗi xoá: " . $e->getMessage();
+                    $error = "❌ Lỗi xoá: " . $e->getMessage() . " | DB: " . pg_last_error($conn);
                 }
             }
 
