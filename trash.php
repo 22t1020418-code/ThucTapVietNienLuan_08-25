@@ -7,18 +7,23 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 if (!empty($_SESSION['restored'])) {
-  echo "<div class='popup-feedback'>✅ Giao dịch đã được khôi phục!</div>";
-  unset($_SESSION['restored']);
+    echo "<div style='
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 12px;
+        margin: 16px 0;
+        border: 1px solid #ffeeba;
+        border-radius: 6px;
+        font-weight: bold;
+    '>" . $_SESSION['restored'] . "</div>";
+    unset($_SESSION['restored']);
 }
+
 $from_date = $_GET['from_date'] ?? '';
 $to_date = $_GET['to_date'] ?? '';
 $description = $_GET['description'] ?? '';
 $wallet_type = $_GET['wallet_type'] ?? '';
 $sql = "SELECT * FROM transactions WHERE user_id = $1 AND type = 3 ORDER BY date DESC";
-$params = [$user_id];
-$idx = 2;
-
-$sql = "SELECT * FROM transactions WHERE user_id = $1 AND type = 3";
 $params = [$user_id];
 $idx = 2;
 
@@ -288,5 +293,11 @@ exit();
       </table>
     </div>
   </div>
+    <script>
+      setTimeout(() => {
+        const alertBox = document.querySelector('div[style*="background-color"]');
+        if (alertBox) alertBox.style.display = 'none';
+      }, 4000);
+    </script>
 </body>
 </html>
