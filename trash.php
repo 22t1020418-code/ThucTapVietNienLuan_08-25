@@ -288,11 +288,23 @@ foreach ($accounts as $acc) {
     }
     
     .btn-edit {
-      background-color: var(--income-color);
+      background-color: #e3f2fd;
+      color: #1565c0;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      text-decoration: none;
+      margin-right: 8px;
     }
     
     .btn-delete {
-      background-color: var(--danger-color);
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
     }
     
     .toggle-btn {
@@ -308,7 +320,7 @@ foreach ($accounts as $acc) {
 <body>
     <!-- Header -->
     <div class="header">
-      <h2>🗑️ Giao dịch đã xóa</h2>
+      <h2>Giao dịch đã xóa</h2>
       <div class="user">
         <a href="profile.php" class="profile-link">
           <span>Xin chào, <?= htmlspecialchars($user['fullname'] ?? '') ?></span>
@@ -332,102 +344,58 @@ foreach ($accounts as $acc) {
           <strong>Tổng số dư:</strong> <?= number_format($totalAccountBalance, 0, ',', '.') ?> VND
         </div>
         <hr>
-        <a href="dashboard.php">🏠 Dashboard</a>
-        <a href="advanced_statistics.php">📊 Thống kê nâng cao</a>
+        <a href="dashboard.php">📋 Quay lại Dashboard</a>
         <a href="trash.php" class="active">🗑️ Giao dịch đã xóa</a>
-        <a href="feedback.php">📩 Gửi phản hồi</a>
       </nav>
     
       <!-- Content -->
       <div class="content">
         <main class="main">
           <div class="content-header">
-              <?php if (!empty($_SESSION['restored'])): ?>
-                  <div style="background-color: #f8d7da; color: #721c24; padding: 12px; margin-bottom: 16px; border: 1px solid #f5c6cb; border-radius: 6px;">
-                    <?= htmlspecialchars($_SESSION['restored']) ?>
-                  </div>
-                  <?php unset($_SESSION['restored']); ?>
-                <?php endif; ?>
-            <h2>Lịch sử giao dịch đã xóa</h2>
+            <h2>🗑️ Giao dịch đã xóa</h2>
           </div>
     
-          <!-- Bộ lọc -->
-          <form method="get" class="filter-panel">
-              <div class="filter-row">
-                <div class="filters">
-                  <input type="date" name="from_date" value="<?= htmlspecialchars($from_date) ?>" placeholder="Từ ngày">
-                  <input type="date" name="to_date" value="<?= htmlspecialchars($to_date) ?>" placeholder="Đến ngày">
-                  <input type="text" name="description" value="<?= htmlspecialchars($description) ?>" placeholder="Mô tả">
-                  <select name="account_id">
-                    <option value="">-- Tất cả tài khoản --</option>
-                    <?php foreach ($accounts as $acc): ?>
-                      <option value="<?= $acc['id'] ?>" <?= $account_id == $acc['id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($acc['name']) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="filter-buttons">
-                  <button type="submit">🔍 Lọc</button>
-                  <a href="trash.php" class="reset">🧹 Làm mới</a>
-                </div>
-              </div>
-            </form>
-
-          <!-- Bảng giao dịch đã xóa -->
-          <?php foreach ($grouped as $label => $entries): ?>
-            <div class="date-group">
-              <div class="date-heading">
-                <div class="date-label"><?= htmlspecialchars($label) ?></div>
-                <div class="date-summary">
-                  <span>🔼 Tổng thu: <?= number_format($totalThu, 0, ',', '.') ?> VND</span>
-                  <span>🔽 Tổng chi: <?= number_format($totalChi, 0, ',', '.') ?> VND</span>
-                </div>
-                <button onclick="toggleGroup('group_<?= md5($label) ?>')" class="toggle-btn">👁️ Xem chi tiết</button>
-              </div>
-            </div>
-            <div id="group_<?= md5($label) ?>" style="display: none;">
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Giờ</th>
-                      <th>Loại</th>
-                      <th>Mô tả</th>
-                      <th>Số tiền</th>
-                      <th>Số dư</th>
-                      <th>Khoản tiền</th>
-                      <th>Thao tác</th>
+          <?php if (empty($deletedTransactions)): ?>
+            <p>Không có giao dịch đã xóa nào.</p>
+          <?php else: ?>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Loại</th>
+                    <th>Mô tả</th>
+                    <th>Số tiền</th>
+                    <th>Khoản tiền</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($deletedTransactions as $row): ?>
+                    <tr class="deleted-transaction">
+                      <td><?= date('d/m/Y H:i', strtotime($row['date'])) ?></td>
+                      <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
+                      <td><?= htmlspecialchars($row['description']) ?></td>
+                      <td><?= number_format($row['amount'], 0, ',', '.') ?> VND</td>
+                      <td><?= htmlspecialchars($row['account_name']) ?></td>
+                      <td class="action-buttons">
+                        <form method="post" action="restore.php" style="display:inline;">
+                          <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                          <button type="submit" class="btn-edit">↩️ Khôi phục</button>
+                        </form>
+                        <form method="post" action="delete_forever.php" style="display:inline;" onsubmit="return confirm('Xóa vĩnh viễn giao dịch này?');">
+                          <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                          <button type="submit" class="btn-delete">❌ Xóa vĩnh viễn</button>
+                        </form>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    <?php foreach ($entries as $row): ?>
-                      <tr class="deleted-transaction">
-                        <td><?= date('H:i:s', strtotime($row['date'])) ?></td>
-                        <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
-                        <td>🗑️ <?= htmlspecialchars($row['description']) ?></td>
-                        <td><?= number_format($row['amount'], 0, ',', '.') ?> VND</td>
-                        <td><?= number_format($row['remaining_balance'], 0, ',', '.') ?> VND</td>
-                        <td><?= htmlspecialchars($row['account_name']) ?></td>
-                        <td class="action-buttons">
-                          <form method="post" action="restore.php" style="display:inline;">
-                              <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
-                              <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                              <button type="submit" onclick="return confirm('Khôi phục giao dịch này?')">↩️ Khôi phục</button>
-                            </form>
-                          <form method="post" action="delete_forever.php" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn giao dịch này?');" style="display:inline;">
-                              <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
-                              <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                              <button type="submit" class="btn-delete">🗑️ Xóa vĩnh viễn</button>
-                            </form>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-              </div>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
             </div>
-          <?php endforeach; ?>
+          <?php endif; ?>
         </main>
       </div>
     </div>
