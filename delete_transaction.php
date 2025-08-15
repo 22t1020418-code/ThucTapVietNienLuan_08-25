@@ -2,6 +2,10 @@
 session_start();
 include "db.php";
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 $user_id = $_SESSION["user_id"] ?? null;
 $transaction_id = $_POST["id"] ?? $_GET["id"] ?? null;
 $step = $_POST["step"] ?? "info";
@@ -42,6 +46,9 @@ $current_balance = floatval($balance_data["balance"]);
 $new_balance = ($type == 1) ? $current_balance + $amount : $current_balance - $amount;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("CSRF token không hợp lệ.");
+    }
     $error = "";
     if ($step === "info") {
         if ($new_balance < 0) {
@@ -59,6 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '<form method="post" style="margin-top: 20px;">';
         echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
         echo '<input type="hidden" name="step" value="confirm">';
+        echo '<input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">';
         echo '<button type="submit" style="background-color: #d32f2f; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Tiếp tục xoá</button>';
         echo '<a href="dashboard.php" style="margin-left: 10px; padding: 10px 20px; background-color: #ccc; color: black; text-decoration: none; border-radius: 4px;">Quay lại</a>';
         echo '</form>';
@@ -75,6 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '<form method="post" style="margin-top: 20px;">';
         echo '<input type="hidden" name="id" value="' . htmlspecialchars($transaction_id) . '">';
         echo '<input type="hidden" name="step" value="delete">';
+        echo '<input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">';
         echo '<label for="password" style="display:block; margin-bottom:8px;">Mật khẩu:</label>';
         echo '<input type="password" name="password" id="password" required style="width:100%; padding:8px; margin-bottom:16px; border:1px solid #ccc; border-radius:4px;">';
         echo '<button type="submit" style="background-color: #1976d2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Xác nhận xoá</button>';
