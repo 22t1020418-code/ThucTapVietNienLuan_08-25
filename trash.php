@@ -161,11 +161,24 @@ $typeLabels = [
     
     .dashboard-wrapper {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: var(--sidebar-width) 1fr;
       gap: var(--spacing);
       padding: var(--spacing);
+        min-height: 100vh;
     }
-        
+    .dashboard-wrapper .sidebar {
+        position: sticky;
+        top: calc(60px + var(--spacing));
+        height: calc(100vh - 60px - 2 * var(--spacing));
+        overflow-y: auto;
+        background: var(--color-card);
+        padding: var(--spacing);
+        border-radius: var(--border-radius);
+        transition: transform var(--transition-speed);
+    } 
+    .dashboard-wrapper .content {
+      min-height: calc(100vh - 60px - 2 * var(--spacing));
+    }
     .sidebar {
       background: var(--color-card);
       padding: var(--spacing);
@@ -179,13 +192,13 @@ $typeLabels = [
     }
     
     .account-card {
-      display: block;
-      background: var(--color-bg);
-      padding: 12px;
-      border-radius: var(--border-radius);
-      margin-bottom: 8px;
-      border: 1px solid #e2e8f0;
-      transition: background var(--transition-speed);
+        display: block;
+        background: var(--color-bg);
+        padding: 12px;
+        border-radius: var(--border-radius);
+        margin-bottom: 8px;
+        border: 1px solid #e2e8f0;
+        transition: background var(--transition-speed);
     }
     
     .account-card:hover {
@@ -314,7 +327,41 @@ $typeLabels = [
       border-radius: var(--border-radius);
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
+    .table-wrapper table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
     
+    .table-wrapper th, .table-wrapper td {
+      padding: 12px 8px;
+      font-size: 15px;
+      color: var(--color-text);
+    }
+    
+    .table-wrapper th {
+      background-color: #f0f4f8;
+      color: #333;
+      font-weight: 600;
+    }
+    .btn-restore {
+      background-color: var(--color-primary);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-restore:hover {
+      background-color: #1565c0;
+    }
+    .deleted-transaction {
+      background-color: #ffecec;
+      color: #d00;
+      font-weight: bold;
+    }
+
     th, td {
       padding: 12px;
       text-align: left;
@@ -413,8 +460,10 @@ $typeLabels = [
           <strong>Tổng số dư:</strong> <?= number_format($totalAccountBalance, 0, ',', '.') ?> VND
         </div>
         <hr>
-        <a href="dashboard.php">📋 Quay lại Dashboard</a>
+        <a href="dashboard.php">🏠 Dashboard</a>
+        <a href="advanced_statistics.php">📊 Thống kê nâng cao</a>
         <a href="trash.php" class="active">🗑️ Giao dịch đã xóa</a>
+        <a href="feedback.php">📩 Gửi phản hồi</a>
       </nav>
     
       <!-- Content -->
@@ -424,7 +473,7 @@ $typeLabels = [
             <h2>🗑️ Giao dịch đã xóa</h2>
           </div>
     
-          <?php if (empty($deletedTransactions)): ?>
+          <?php if (empty($deletedtransactions)): ?>
             <p>Không có giao dịch đã xóa nào.</p>
           <?php else: ?>
             <div class="table-wrapper">
