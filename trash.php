@@ -108,6 +108,7 @@ $typeLabels = [
       --border-radius: 8px;
       --spacing: 16px;
       --transition-speed: 0.3s;
+      --sidebar-width: 260px;
     }
     * {
       box-sizing: border-box;
