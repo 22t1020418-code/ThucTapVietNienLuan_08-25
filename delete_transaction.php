@@ -16,10 +16,6 @@ if (!$user_id || !$transaction_id) {
 }
 
 $now = date('Y-m-d H:i:s');
-pg_query_params($conn, 
-    "UPDATE transactions SET type = 3, deleted_at = $1 WHERE id = $2 AND user_id = $3", 
-    [$now, $transaction_id, $user_id]
-);
 
 // Truy vấn thông tin giao dịch
 $query = "SELECT amount, type, account_id FROM transactions WHERE id = $1 AND user_id = $2";
@@ -116,7 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       pg_query($conn, "BEGIN");
       try {
         // Cập nhật số dư
-        $delete_sql = "UPDATE transactions SET type = 3, original_type = $1 WHERE id = $2 AND user_id = $3";
+        $delete_sql = "UPDATE transactions SET type = 3, original_type = $1, deleted_at = NOW() WHERE id = $2 AND user_id = $3";
         pg_query_params($conn, $delete_sql, [ $type, $transaction_id, $user_id ]);
         
         $adjustment = ($type == 1) ? -$amount : $amount;
