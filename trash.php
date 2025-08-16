@@ -164,7 +164,7 @@ $typeLabels = [
       grid-template-columns: var(--sidebar-width) 1fr;
       gap: var(--spacing);
       padding: var(--spacing);
-        min-height: 100vh;
+      min-height: 100vh;
     }
     .dashboard-wrapper .sidebar {
         position: sticky;
@@ -473,7 +473,7 @@ $typeLabels = [
             <h2>🗑️ Giao dịch đã xóa</h2>
           </div>
     
-          <?php if (empty($deletedtransactions)): ?>
+          <?php if (empty($deleted_transactions)): ?>
             <p>Không có giao dịch đã xóa nào.</p>
           <?php else: ?>
             <div class="table-wrapper">
@@ -489,7 +489,7 @@ $typeLabels = [
                   </tr>
                 </thead>
                 <tbody>
-                  <?php foreach ($deletedTransactions as $row): ?>
+                  <?php foreach ($deleted_transactions as $row): ?>
                     <tr class="deleted-transaction">
                       <td><?= date('d/m/Y H:i', strtotime($row['date'])) ?></td>
                       <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
