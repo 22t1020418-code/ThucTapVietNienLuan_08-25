@@ -89,6 +89,6 @@ try {
   $_SESSION['restored'] = "❌ Lỗi khôi phục: " . $e->getMessage();
 }
 
-header("Location: trash.php");
+header("Location: dashboard.php");
 exit();
 ?>
