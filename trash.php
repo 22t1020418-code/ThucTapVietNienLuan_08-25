@@ -502,7 +502,9 @@ $typeLabels = [
                   <?php foreach ($deleted_transactions as $row): ?>
                     <tr class="deleted-transaction">
                       <td><?= date('d/m/Y H:i', strtotime($row['date'])) ?></td>
-                      <td><?= date('d/m/Y H:i', strtotime($row['deleted_at'])) ?></td>
+                      <td>
+                          <?= !empty($row['deleted_at']) ? date('d/m/Y H:i', strtotime($row['deleted_at'])) : 'Chưa rõ' ?>
+                      </td>
                       <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
                       <td><?= htmlspecialchars($row['description']) ?></td>
                       <td><?= number_format($row['amount'], 0, ',', '.') ?> VND</td>
