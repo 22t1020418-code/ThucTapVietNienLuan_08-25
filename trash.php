@@ -23,7 +23,10 @@ $from_date = $_GET['from_date'] ?? '';
 $to_date = $_GET['to_date'] ?? '';
 $description = $_GET['description'] ?? '';
 $account_id = $_GET['account_id'] ?? '';
-$sql = "SELECT * FROM transactions WHERE user_id = $1 AND type = 3";
+$sql = "SELECT t.*, a.name AS account_name 
+        FROM transactions t 
+        LEFT JOIN accounts a ON t.account_id = a.id 
+        WHERE t.user_id = $1 AND t.type = 3";
 $params = [$user_id];
 $idx = 2;
 $avatar = '';
@@ -472,7 +475,12 @@ $typeLabels = [
           <div class="content-header">
             <h2>🗑️ Giao dịch đã xóa</h2>
           </div>
-    
+            <?php if (isset($_SESSION['restored'])) : ?>
+              <div class="alert alert-success" style="margin: 12px 0; padding: 10px; background: #e6ffed; border-left: 5px solid #28a745;">
+                ✅ Giao dịch đã được khôi phục thành công.
+              </div>
+              <?php unset($_SESSION['restored']); ?>
+            <?php endif; ?>
           <?php if (empty($deleted_transactions)): ?>
             <p>Không có giao dịch đã xóa nào.</p>
           <?php else: ?>
@@ -481,6 +489,7 @@ $typeLabels = [
                 <thead>
                   <tr>
                     <th>Ngày</th>
+                    <th>Thời điểm xóa</th>
                     <th>Loại</th>
                     <th>Mô tả</th>
                     <th>Số tiền</th>
@@ -492,6 +501,7 @@ $typeLabels = [
                   <?php foreach ($deleted_transactions as $row): ?>
                     <tr class="deleted-transaction">
                       <td><?= date('d/m/Y H:i', strtotime($row['date'])) ?></td>
+                      <td><?= date('d/m/Y H:i', strtotime($row['deleted_at'])) ?></td>
                       <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
                       <td><?= htmlspecialchars($row['description']) ?></td>
                       <td><?= number_format($row['amount'], 0, ',', '.') ?> VND</td>
