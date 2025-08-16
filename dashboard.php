@@ -905,10 +905,6 @@ $typeLabels = [
                                       <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                       <button type="submit" class="btn-edit">↩️ Khôi phục</button>
                                     </form>
-                                    <form method="post" action="hide_transaction.php" style="display:inline;" onsubmit="return confirm('Ẩn giao dịch này?');">
-                                        <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
-                                        <button type="submit" class="btn-delete">🙈 Ẩn</button>
-                                    </form>
                                   <?php else: ?>
                                     <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
                                   <?php endif; ?>
@@ -998,6 +994,13 @@ $typeLabels = [
           el.style.display = 'none';
         }
       }
+    const deletedRows = document.querySelectorAll('.deleted-transaction');
+     deletedRows.forEach(row => {
+        // Đặt hẹn giờ 30 giây để ẩn dòng đó
+        setTimeout(() => {
+          row.style.display = 'none';
+        }, 30000); // 30,000 milliseconds = 30 seconds
+      });
     </script>
 </body>
 </html>
