@@ -254,7 +254,8 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
       locale: "vi",
       defaultDate: new Date(),
       wrap: true,
-      allowInput: true
+      allowInput: true,
+      maxDate: "today"
     });
   
     const accountSelect = document.querySelector("select[name='account_id']");
