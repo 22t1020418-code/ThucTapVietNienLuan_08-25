@@ -21,8 +21,6 @@ pg_query_params($conn,
     [$now, $transaction_id, $user_id]
 );
 
-echo "✅ Giao dịch đã được xóa tạm thời. Sẽ ẩn khỏi dashboard sau 30 giây.";
-
 // Truy vấn thông tin giao dịch
 $query = "SELECT amount, type, account_id FROM transactions WHERE id = $1 AND user_id = $2";
 $result = pg_query_params($conn, $query, [$transaction_id, $user_id]);
@@ -126,7 +124,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         pg_query_params($conn, $update_balance_sql, [ $adjustment, $account_id, $user_id ]);
         
         pg_query($conn, "COMMIT");
-        header("Location: dashboard.php?deleted=1");
+        echo "<div style='text-align:center; margin-top:50px; font-family:Arial;'>
+                ✅ Giao dịch đã được xóa tạm thời.<br>
+                Sẽ quay lại dashboard sau 3 giây...
+              </div>";
+        echo '<meta http-equiv="refresh" content="3;url=dashboard.php?deleted=1">';
         exit;
       } catch (Exception $e) {
         pg_query($conn, "ROLLBACK");
