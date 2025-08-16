@@ -46,7 +46,7 @@ try {
     if (!in_array($original_type, [1, 2])) {
       throw new Exception("Loại giao dịch gốc không hợp lệ.");
     }
-  $restore_sql = "UPDATE transactions SET type = $1 WHERE id = $2";
+  $restore_sql = "UPDATE transactions SET type = $1, deleted_at = NULL WHERE id = $2";
   $restore_res = pg_query_params($conn, $restore_sql, [ $original_type, $transaction_id ]);
 
   
