@@ -54,7 +54,7 @@ $balance_data = pg_fetch_assoc($balance_result);
 $current_balance = floatval($balance_data["balance"]);
 
 // Tính số dư mới
-$new_balance = ($type == 1) ? $current_balance + $amount : $current_balance - $amount;
+$new_balance = ($type == 1) ? $current_balance - $amount : $current_balance + $amount;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
@@ -83,8 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '</form>';
         echo '</div>';
         exit;
-    }
-    elseif ($step === "confirm") {
+    } elseif ($step === "confirm") {
         echo '<div style="max-width: 500px; margin: 40px auto; padding: 20px; border: 2px solid #1976d2; border-radius: 8px; background-color: #e3f2fd; font-family: Arial, sans-serif;">';
         echo '<h2 style="color: #1976d2;">🔐 Xác nhận xoá giao dịch</h2>';
         if (!empty($error)) {
