@@ -133,9 +133,14 @@ if ($to_date) {
 
 $sql .= " ORDER BY t.date DESC, t.id DESC";
 $resTrans = pg_query_params($conn, $sql, $params);
+function isExpiredDeletedTransaction($t) {
+    return $t['type'] == 3 && isset($t['deleted_at']) && strtotime($t['deleted_at']) < time() - 30;
+}
+
 
 $transactions = [];
 while ($row = pg_fetch_assoc($resTrans)) {
+    if (isExpiredDeletedTransaction($row)) continue;
     $transactions[] = $row;
 }
 
@@ -143,10 +148,13 @@ while ($row = pg_fetch_assoc($resTrans)) {
 $totalThuAll = 0;
 $totalChiAll = 0;
 foreach ($transactions as $t) {
-    if ($t['type'] == 0) $totalThuAll = bcadd($totalThuAll, $t['amount'], 2);
-    if ($t['type'] == 1) $totalChiAll = bcadd($totalChiAll, $t['amount'], 2);
+    if ($t['type'] == 1) {
+        $totalThuAll = bcadd($totalThuAll, $t['amount'], 2);
+    }
+    if ($t['type'] == 2) {
+        $totalChiAll = bcadd($totalChiAll, $t['amount'], 2);
+    }
 }
-
 // 7. Nhóm giao dịch theo ngày
 $grouped = [];
 foreach ($transactions as $t) {
@@ -156,10 +164,10 @@ foreach ($transactions as $t) {
 
 // Nhãn cho type
 $typeLabels = [
-    0 => 'Thu',
-    1 => 'Chi',
-    2 => 'Cập nhật tài khoản',
-    3 => 'Xóa giao dịch'
+  1 => 'Thu',
+  2 => 'Chi',
+  0 => 'Hệ thống',
+  3 => 'Đã xoá'
 ];
 ?>
 
@@ -1002,9 +1010,6 @@ $typeLabels = [
     const deletedRows = document.querySelectorAll('.deleted-transaction');
      deletedRows.forEach(row => {
         // Đặt hẹn giờ 30 giây để ẩn dòng đó
-        setTimeout(() => {
-          row.style.display = 'none';
-        }, 30000); // 30,000 milliseconds = 30 seconds
       });
     </script>
 </body>
