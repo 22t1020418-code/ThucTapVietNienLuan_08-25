@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $updated_balance = floatval($balance_data['balance'] ?? 0);
     
     $type_code = isset($_POST['type']) ? intval($_POST['type']) : -1;
-    if (!in_array($type_code, [0, 1])) {
+    if (!in_array($type_code, [1, 2])) {
         echo "<p style='color:red;'>Loại giao dịch không hợp lệ. Vui lòng chọn lại.</p>";
         exit();
     }
@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // 👉 Kiểm tra nếu là giao dịch Chi thì số tiền không được vượt quá số dư
-    if ($type_code === 1) { // Chi
+    if ($type_code === 2) { // Chi
         $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
         $balance_data = pg_fetch_assoc($balance_q);
         $current_balance = floatval($balance_data['balance'] ?? 0);
@@ -94,17 +94,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // 👉 Tính toán ảnh hưởng đến số dư
     $delta = 0;
 
-    if ($oldType === 0) {
-        $delta -= $oldAmount;
-    } elseif ($oldType === 1) {
-        $delta += $oldAmount;
-    }
+    if ($oldType === 1) { $delta += $oldAmount; } // Thu
+    elseif ($oldType === 2) { $delta -= $oldAmount; } // Chi
     
-    if ($newType === 0) {
-        $delta += $newAmount;
-    } elseif ($newType === 1) {
-        $delta -= $newAmount;
-    }
+    if ($newType === 1) { $delta += $newAmount; } // Thu
+    elseif ($newType === 2) { $delta -= $newAmount; } // Chi
+    
     $new_balance = $updated_balance + $delta;
     if ($new_balance < 0) {
         echo "<div style='max-width:600px; margin:40px auto; padding:20px; border:2px solid #f44336; background:#fff5f5; border-radius:8px; font-family:Arial;'>
@@ -117,7 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $balanceQuery = "
-        SELECT SUM(CASE WHEN type = 0 THEN amount ELSE -amount END) AS balance
+        SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS balance
         FROM transactions
         WHERE account_id = $1 AND user_id = $2 AND date <= $3 AND id != $4
     ";
@@ -144,9 +139,9 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
         $amount = floatval($row['amount']);
         $type = intval($row['type']);
 
-        if ($type === 0) { // Thu
+        if ($type === 1) { // Thu
             $running_balance += $amount;
-        } else { // Chi
+        } elseif ($type === 2) { // Chi
             $running_balance -= $amount;
         }
 
@@ -168,7 +163,7 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
 
     
     function updateBalance($conn, $user_id, $account_id, $amount, $type) {
-        $adjustment = ($type === 0) ? $amount : -$amount;
+        $adjustment = ($type === 1) ? $amount : -$amount;
         pg_query_params($conn,
             "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3",
             array($adjustment, $account_id, $user_id)
@@ -194,18 +189,11 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
     $adjustment = 0;
 
     // Trừ giao dịch cũ
-    if ($oldType === 0) { // Thu
-        $adjustment -= $oldAmount;
-    } else { // Chi
-        $adjustment += $oldAmount;
-    }
+    if ($oldType === 1) { $adjustment += $oldAmount; } // Thu
+    elseif ($oldType === 2) { $adjustment -= $oldAmount; } // Chi
     
-    // Cộng giao dịch mới
-    if ($newType === 0) {
-        $adjustment += $newAmount;
-    } else {
-        $adjustment -= $newAmount;
-    }
+    if ($newType === 1) { $adjustment += $newAmount; } // Thu
+    elseif ($newType === 2) { $adjustment -= $newAmount; } // Chi
 
     pg_query_params($conn,
         "UPDATE accounts SET balance = balance + $1 WHERE id = $2 AND user_id = $3",
@@ -231,7 +219,7 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
 $account_name = $transaction['account_name'] ?? 'Không xác định';
 $current_balance = floatval($transaction['current_balance'] ?? 0);
 $transaction_type_code = intval($transaction['type'] ?? 0);
-$transaction_type = ($transaction_type_code === 0) ? 'thu' : 'chi';
+$transaction_type = ($transaction_type_code === 1) ? 'thu' : (($transaction_type_code === 2) ? 'chi' : 'khác');
 $amount = floatval($transaction['amount'] ?? 0);
 $selected_content = $transaction['description'] ?? '';
 $datetime = $transaction['date'] ?? date('Y-m-d H:i');
