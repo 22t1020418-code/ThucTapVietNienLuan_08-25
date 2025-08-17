@@ -30,7 +30,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $account_id  = intval($_POST['account_id']);
     $date_input = $_POST['transaction_date'] ?? date('d/m/Y');
     $time = $_POST['transaction_time'] ?? date('H:i');
-
+    
+    $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
+    $balance_data = pg_fetch_assoc($balance_q);
+    $updated_balance = floatval($balance_data['balance'] ?? 0);
+    
     $type_code = isset($_POST['type']) ? intval($_POST['type']) : -1;
     if (!in_array($type_code, [0, 1])) {
         echo "<p style='color:red;'>Loại giao dịch không hợp lệ. Vui lòng chọn lại.</p>";
@@ -103,14 +107,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     $new_balance = $updated_balance + $delta;
     if ($new_balance < 0) {
-        echo "<p style='color:red; font-weight:bold;'>⚠️ Cảnh báo: Việc chỉnh sửa này sẽ khiến số dư tài khoản bị âm (" . number_format($new_balance, 0, ',', '.') . " VND). Vui lòng kiểm tra lại.</p>";
+        echo "<div style='max-width:600px; margin:40px auto; padding:20px; border:2px solid #f44336; background:#fff5f5; border-radius:8px; font-family:Arial;'>
+                <h2 style='color:#d32f2f;'>⚠️ Cảnh báo: Số dư sẽ bị âm sau khi chỉnh sửa giao dịch</h2>
+                <p><strong>Số dư hiện tại:</strong> " . number_format($updated_balance, 0, ',', '.') . " VND</p>
+                <p><strong>Số dư sau chỉnh sửa:</strong> <span style='color:#d32f2f; font-weight:bold;'>" . number_format($new_balance, 0, ',', '.') . " VND</span></p>
+                <a href='edit_transaction.php?id=$id' style='display:inline-block; margin-top:20px; padding:10px 20px; background:#ccc; color:#000; text-decoration:none; border-radius:4px;'>Quay lại chỉnh sửa</a>
+              </div>";
         exit();
     }
-
-    // 👉 Truy vấn số dư hiện tại của tài khoản
-    $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
-    $balance_data = pg_fetch_assoc($balance_q);
-    $updated_balance = floatval($balance_data['balance'] ?? 0);
 
     $balanceQuery = "
         SELECT SUM(CASE WHEN type = 0 THEN amount ELSE -amount END) AS balance
