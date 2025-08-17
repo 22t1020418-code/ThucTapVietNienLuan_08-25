@@ -68,13 +68,15 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
     if ($amount > MAX_BALANCE) throw new Exception("Số tiền vượt giới hạn.");
 
     // 🔸 Tính toán số dư mới
-    $type_value = ($type === 'chi') ? 1 : 0;
-    $new_balance = ($type_value === 0) ? $account['balance'] + $amount : $account['balance'] - $amount;
+    $type_value = ($type === 'thu') ? 1 : 2;
+    $new_balance = ($type_value === 1)
+    ? $account['balance'] + $amount
+    : $account['balance'] - $amount;
     if ($new_balance < 0 || $new_balance > MAX_BALANCE) throw new Exception("Số dư sau giao dịch không hợp lệ.");
 
     // 🔸 Mô tả mặc định nếu trống
     if ($description === '') {
-      $description = $type_value === 0 ? 'Giao dịch thu' : 'Giao dịch chi';
+      $description = ($type_value === 1) ? 'Giao dịch thu' : 'Giao dịch chi';
     }
 
     // 🔸 Giới hạn mô tả
