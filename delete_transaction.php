@@ -30,6 +30,10 @@ if (!$info) {
 $amount = floatval($info["amount"]);
 $formatted_amount = number_format($amount, 0, '.', ',');
 $type = intval($info["type"]);
+if (!in_array($type, [1, 2])) {
+    echo "Loại giao dịch không hợp lệ để xóa.";
+    exit;
+}
 $account_id = intval($info["account_id"]);
 
 $account_query = "SELECT name FROM accounts WHERE id = $1 AND user_id = $2";
