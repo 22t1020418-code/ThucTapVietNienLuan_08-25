@@ -65,9 +65,12 @@ try {
 
     $balance_check_sql = "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2";
     $balance_check_res = pg_query_params($conn, $balance_check_sql, [$info['account_id'], $user_id]);
+       if (pg_num_rows($balance_check_res) !== 1) {
+        throw new Exception("Không tìm thấy tài khoản để cập nhật số dư.");
+    }
     $current_balance = pg_fetch_result($balance_check_res, 0, 0);
     $new_balance = $current_balance + $adjustment;
-    
+
     if ($new_balance < 0) {
         throw new Exception("Khôi phục sẽ khiến số dư âm.");
     }
