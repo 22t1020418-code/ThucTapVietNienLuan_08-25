@@ -904,7 +904,7 @@ $typeLabels = [
                               <td><?= number_format($row['remaining_balance']??0,0,',','.') ?> VND</td>
                               <td><?= htmlspecialchars($row['account_name']) ?></td>
                               <td class="action-buttons">
-                                  <?php if ($row['type'] == 0 || $row['type'] == 1): ?>
+                                  <?php if ($row['type'] == 1 || $row['type'] == 2): ?>
                                     <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
                                     <form method="post" action="delete_transaction.php" style="display:inline;">
                                       <input type="hidden" name="id" value="<?= $row['id'] ?>">
