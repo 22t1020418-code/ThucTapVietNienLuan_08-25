@@ -234,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
       <div style="display: flex; gap: 12px;">
         <div style="flex: 1; position: relative;">
           <div class="flatpickr-wrapper">
-            <input type="text" name="transaction_date" class="form-control" data-input placeholder="Chọn ngày" required>
+            <input type="text" name="transaction_date" class="form-control" data-input placeholder="Chọn ngày" required value="<?= date('d/m/Y') ?>">
             <button type="button" class="calendar-btn" data-toggle title="Chọn ngày">📅</button>
           </div>
         </div>
