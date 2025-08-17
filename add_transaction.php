@@ -95,7 +95,6 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST') {
       alert('✅ Giao dịch đã được thêm!\\nSố dư mới: " . number_format($new_balance, 0, ',', '.') . " VND');
       window.location.href = 'dashboard.php';
     </script>";
-    exit();
     exit();    
   } catch (Exception $e) {
     pg_query($conn, 'ROLLBACK');
