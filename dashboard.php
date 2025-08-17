@@ -166,7 +166,7 @@ foreach ($transactions as $t) {
 $typeLabels = [
   1 => 'Thu',
   2 => 'Chi',
-  0 => 'Hệ thống',
+  0 => 'Cập nhật',
   3 => 'Đã xoá'
 ];
 ?>
