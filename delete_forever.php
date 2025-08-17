@@ -42,6 +42,6 @@ try {
     $_SESSION['restored'] = "❌ Lỗi xóa: " . $e->getMessage();
 }
 
-header("Location: trash.php");
+header("Location: dashboard.php");
 exit();
 ?>
