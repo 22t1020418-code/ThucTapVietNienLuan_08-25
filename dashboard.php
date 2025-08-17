@@ -851,8 +851,8 @@ $typeLabels = [
                     $totalThu = 0;
                     $totalChi = 0;
                     foreach ($entries as $row) {
-                        if ($row['type']==0) $totalThu += $row['amount'];
-                        elseif ($row['type']==1) $totalChi += $row['amount'];
+                        if ($row['type'] == 1) $totalThu += $row['amount'];  // Thu
+                        elseif ($row['type'] == 2) $totalChi += $row['amount'];  // Chi
                     }
                     $groupId = 'group_' . md5($label);
                 ?>
