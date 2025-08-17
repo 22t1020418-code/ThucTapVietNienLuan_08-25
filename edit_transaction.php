@@ -101,7 +101,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif ($newType === 1) {
         $delta -= $newAmount;
     }
-       
+    $new_balance = $updated_balance + $delta;
+    if ($new_balance < 0) {
+        echo "<p style='color:red; font-weight:bold;'>⚠️ Cảnh báo: Việc chỉnh sửa này sẽ khiến số dư tài khoản bị âm (" . number_format($new_balance, 0, ',', '.') . " VND). Vui lòng kiểm tra lại.</p>";
+        exit();
+    }
+
     // 👉 Truy vấn số dư hiện tại của tài khoản
     $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
     $balance_data = pg_fetch_assoc($balance_q);
