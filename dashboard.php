@@ -898,8 +898,8 @@ $typeLabels = [
                               <td><?= date('H:i:s', strtotime($row['date'])) ?></td>
                               <td><?= $typeLabels[$row['type']] ?? '-' ?></td>
                               <td><?= htmlspecialchars($d ?: '-') ?></td>
-                              <td class="<?= $row['type']==0? 'amount-income': ($row['type']==1? 'amount-expense':'') ?>">
-                                <?= $row['type']==2? '0': number_format($row['amount']??0,0,',','.') ?> VND
+                              <td class="<?= $row['type']==1? 'amount-income': ($row['type']==2? 'amount-expense':'') ?>">
+                                <?= in_array($row['type'], [1,2]) ? number_format($row['amount']??0,0,',','.') : '0' ?> VND
                               </td>
                               <td><?= number_format($row['remaining_balance']??0,0,',','.') ?> VND</td>
                               <td><?= htmlspecialchars($row['account_name']) ?></td>
