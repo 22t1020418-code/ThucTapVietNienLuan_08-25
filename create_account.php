@@ -53,19 +53,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             
                 // Giao dịch “thu” ban đầu
                 $trans1 = pg_query_params($conn,
-                    "INSERT INTO transactions
-                     (user_id, account_id, type, amount, description, remaining_balance, date)
-                     VALUES ($1, $2, 0, $3, $4, $3, $5)",
-                    [$user_id, $account_id, $balance, "Số dư ban đầu", $now]
-                );
-            
+                      "INSERT INTO transactions (user_id, account_id, type, amount, description, remaining_balance, date)
+                       VALUES ($1, $2, 1, $3, $4, $3, $5)",
+                      [$user_id, $account_id, $balance, "Số dư ban đầu", $now]
+                    );
+
                 // Ghi chú hành động tạo tài khoản
-                $trans2 = pg_query_params(
-                    $conn,
-                    "INSERT INTO transactions (user_id, account_id, type, amount, description, remaining_balance, date)
-                     VALUES ($1, $2, 2, 0, $3, $4, $5)",
-                    [ $user_id, $account_id, "Tạo khoản tiền mới", $balance, $now ]
-                );
+                $trans2 = pg_query_params($conn,
+                      "INSERT INTO transactions (user_id, account_id, type, amount, description, remaining_balance, date)
+                       VALUES ($1, $2, 0, 0, $3, $4, $5)",
+                      [$user_id, $account_id, "Tạo khoản tiền mới", $balance, $now]
+                    );
             
                 if ($trans1 && $trans2) {
                     // ✅ Chỉ chuyển hướng nếu giao dịch tạo tài khoản thành công
