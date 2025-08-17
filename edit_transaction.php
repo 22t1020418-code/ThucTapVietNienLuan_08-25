@@ -230,7 +230,8 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
 // Gán biến để sử dụng trong HTML
 $account_name = $transaction['account_name'] ?? 'Không xác định';
 $current_balance = floatval($transaction['current_balance'] ?? 0);
-$transaction_type = $_POST['type'] ?? (($transaction['type'] == 0) ? 'thu' : 'chi');
+$transaction_type_code = intval($transaction['type'] ?? 0);
+$transaction_type = ($transaction_type_code === 0) ? 'thu' : 'chi';
 $amount = floatval($transaction['amount'] ?? 0);
 $selected_content = $transaction['description'] ?? '';
 $datetime = $transaction['date'] ?? date('Y-m-d H:i');
