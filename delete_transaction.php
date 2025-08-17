@@ -34,6 +34,11 @@ if (!in_array($type, [1, 2])) {
     echo "Loại giao dịch không hợp lệ để xóa.";
     exit;
 }
+if ($type === 3) {
+    echo "Giao dịch đã bị xoá trước đó.";
+    exit;
+}
+
 $account_id = intval($info["account_id"]);
 
 $account_query = "SELECT name FROM accounts WHERE id = $1 AND user_id = $2";
@@ -325,7 +330,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           <h2>⚠️ Xác nhận xóa giao dịch</h2>
     
           <p><strong>Tài khoản:</strong> <?= htmlspecialchars($account_name) ?></p>
-          <p><strong>Loại:</strong> <?= $info['type'] == 0 ? 'Thu' : 'Chi' ?></p>
+          <?php
+            $type_label = match ($info['type']) {
+                1 => 'Thu',
+                2 => 'Chi',
+                0 => 'Hệ thống',
+                3 => 'Đã xoá',
+                default => 'Không xác định'
+            };
+            ?>
+            <p><strong>Loại:</strong> <?= $type_label ?></p>
           <p><strong>Số tiền:</strong> <?= number_format($info['amount'], 2) ?> VND</p>
           <?php
             $desc = trim($info['description'] ?? '');
