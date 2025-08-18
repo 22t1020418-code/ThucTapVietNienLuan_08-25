@@ -100,16 +100,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($newType === 1) { $delta += $newAmount; } // Thu
     elseif ($newType === 2) { $delta -= $newAmount; } // Chi
     
-    $new_balance = $updated_balance + $delta;
-    if ($new_balance < 0) {
-        echo "<div style='max-width:600px; margin:40px auto; padding:20px; border:2px solid #f44336; background:#fff5f5; border-radius:8px; font-family:Arial;'>
-                <h2 style='color:#d32f2f;'>⚠️ Cảnh báo: Số dư sẽ bị âm sau khi chỉnh sửa giao dịch</h2>
-                <p><strong>Số dư hiện tại:</strong> " . number_format($updated_balance, 0, ',', '.') . " VND</p>
-                <p><strong>Số dư sau chỉnh sửa:</strong> <span style='color:#d32f2f; font-weight:bold;'>" . number_format($new_balance, 0, ',', '.') . " VND</span></p>
-                <a href='edit_transaction.php?id=$id' style='display:inline-block; margin-top:20px; padding:10px 20px; background:#ccc; color:#000; text-decoration:none; border-radius:4px;'>Quay lại chỉnh sửa</a>
-              </div>";
-        exit();
+// 👉 Kiểm tra nếu giao dịch là Chi
+if ($type_code === 2) {
+    // 👉 Nếu chỉ thay đổi ngày → bỏ qua kiểm tra số dư
+    if (
+        $oldType === $newType &&
+        $oldAmount === $newAmount &&
+        $oldAccountId === $account_id &&
+        !$sameDateTime
+    ) {
+        // Không cần kiểm tra số dư
+    } else {
+        // 👉 Truy vấn số dư tại thời điểm mới (loại trừ giao dịch cũ)
+        $balanceQuery = "
+            SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS balance
+            FROM transactions
+            WHERE account_id = $1 AND user_id = $2 AND date <= $3 AND id != $4
+        ";
+        $balanceResult = pg_query_params($conn, $balanceQuery, array($account_id, $user_id, $datetime, $id));
+        $balanceRow = pg_fetch_assoc($balanceResult);
+        $balanceAtTransaction = floatval($balanceRow['balance'] ?? 0);
+
+        // 👉 Tính số dư giả lập sau khi thêm giao dịch mới
+        $simulated_balance = $balanceAtTransaction - $amount;
+
+        if ($simulated_balance < 0) {
+            echo "<div style='color:red; font-weight:bold;'>⚠️ Số dư sẽ bị âm tại thời điểm mới. Vui lòng chọn ngày khác hoặc giảm số tiền chi.</div>";
+            exit();
+        }
     }
+}
 
     $balanceQuery = "
         SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS balance
