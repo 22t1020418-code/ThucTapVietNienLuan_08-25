@@ -404,9 +404,9 @@ $content_options = ["Ăn uống", "Đi lại", "Lương", "Thưởng", "Tiền �
 
       <label>Loại giao dịch</label>
       <select name="type" id="type" onchange="updateMaxAmount()">
-          <option value="0" <?= $transaction['type'] == 0 ? 'selected' : '' ?>>Thu</option>
-          <option value="1" <?= $transaction['type'] == 1 ? 'selected' : '' ?>>Chi</option>
-        </select>
+        <option value="1" <?= $transaction['type'] == 1 ? 'selected' : '' ?>>Thu</option>
+        <option value="2" <?= $transaction['type'] == 2 ? 'selected' : '' ?>>Chi</option>
+      </select>
 
       <label>Số tiền</label>
       <input type="text" id="amount" maxlength="10" name="amount" value="<?= number_format($amount, 0, ',', ',') ?>" required>
