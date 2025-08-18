@@ -56,6 +56,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "<p style='color:red;'>Số tiền vượt quá giới hạn (tối đa 1,000,000,000,000 VND).</p>";
         exit();
     }
+    // 👉 Kiểm tra nếu giao dịch là Thu và có thay đổi
+    if ($type_code === 1) {
+        if (
+            $oldType !== $newType ||
+            $oldAmount !== $newAmount ||
+            $oldAccountId !== $account_id ||
+            !$sameDateTime
+        ) {
+            // Truy vấn số dư tại thời điểm mới (loại trừ giao dịch cũ)
+            $balanceQuery = "
+                SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS balance
+                FROM transactions
+                WHERE account_id = $1 AND user_id = $2 AND date <= $3 AND id != $4
+            ";
+            $balanceResult = pg_query_params($conn, $balanceQuery, array($account_id, $user_id, $datetime, $id));
+            $balanceRow = pg_fetch_assoc($balanceResult);
+            $balanceAtTransaction = floatval($balanceRow['balance'] ?? 0);
+    
+            // Tính số dư giả lập sau khi cập nhật
+            $simulated_balance = $balanceAtTransaction + $amount;
+    
+            // Truy vấn tổng chi đến thời điểm đó
+            $chiQuery = "
+                SELECT SUM(amount) AS total_chi
+                FROM transactions
+                WHERE account_id = $1 AND user_id = $2 AND type = 2 AND date <= $3 AND id != $4
+            ";
+            $chiResult = pg_query_params($conn, $chiQuery, array($account_id, $user_id, $datetime, $id));
+            $chiRow = pg_fetch_assoc($chiResult);
+            $totalChi = floatval($chiRow['total_chi'] ?? 0);
+    
+            if ($simulated_balance < $totalChi) {
+                echo "<div style='color:red; font-weight:bold;'>⚠️ Việc giảm số tiền thu sẽ khiến số dư không đủ để chi. Vui lòng kiểm tra lại.</div>";
+                exit();
+            }
+        }
+    }
 
     // 👉 Kiểm tra nếu là giao dịch Chi thì số tiền không được vượt quá số dư
     if ($type_code === 2) { // Chi
