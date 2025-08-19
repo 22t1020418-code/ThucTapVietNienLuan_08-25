@@ -1,4 +1,4 @@
-<?php
+\<?php
 session_start();
 include "db.php"; // Đảm bảo db.php dùng pg_connect()
 date_default_timezone_set('Asia/Ho_Chi_Minh');
@@ -15,181 +15,64 @@ $chartType = ($mode === 'year') ? 'pie' : ($_GET['chart'] ?? 'line');
 $labels = $thu_data = $chi_data = [];
 $labels2 = $thu_data2 = $chi_data2 = [];
 
-$filter_account = isset($_GET['account_id']) ? intval($_GET['account_id']) : 0;
-$filter_type = $_GET['type'] ?? 'all';
-$filter_description = trim($_GET['description'] ?? '');
-$from_date = $_GET['from_date'] ?? '';
-$to_date = $_GET['to_date'] ?? '';
-
-if ($mode === 'year' && $chartType === 'line') {
-    $currentYear = date('Y');
+if ($mode === 'year') {
     $sql = "
-        SELECT EXTRACT(MONTH FROM date) AS label,
-               SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-               SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+        SELECT EXTRACT(YEAR FROM date) AS label,
+            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+            SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
         FROM transactions
-        WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2
+        WHERE user_id = $1
+        GROUP BY label
+        ORDER BY label DESC
+        LIMIT 2
     ";
-    $params = [$user_id, $currentYear];
-    $idx = 3; // bắt đầu từ $3 vì đã dùng $1 và $2
-
-    // Thêm điều kiện lọc nếu có
-    if ($filter_account > 0) {
-        $sql .= " AND account_id = \${$idx}";
-        $params[] = $filter_account;
-        $idx++;
-    }
-    if ($filter_type !== 'all') {
-        $sql .= " AND type = \${$idx}";
-        $params[] = intval($filter_type);
-        $idx++;
-    }
-    if ($filter_description !== '') {
-        if ($filter_description === 'Tạo khoản tiền mới') {
-            $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
-        } else {
-            $sql .= " AND description ILIKE \${$idx}";
-            $params[] = "%{$filter_description}%";
-            $idx++;
-        }
-    }
-    if ($from_date) {
-        $sql .= " AND DATE(date) >= \${$idx}";
-        $params[] = $from_date;
-        $idx++;
-    }
-    if ($to_date) {
-        $sql .= " AND DATE(date) <= \${$idx}";
-        $params[] = $to_date;
-        $idx++;
-    }
-
-    // Kết thúc truy vấn
-    $sql .= " GROUP BY label ORDER BY label ASC";
-
-    // Khởi tạo mảng 12 tháng
-    for ($i = 1; $i <= 12; $i++) {
-        $fullDates[$i] = ['thu' => 0, 'chi' => 0];
-    }
- } elseif ($mode === 'week') {
+} elseif ($mode === 'week') {
     if ($chartType === 'line') {
         $sql = "
             SELECT DATE(date) AS label,
-                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '8 days'
+            GROUP BY label
+            ORDER BY label ASC
         ";
-        $params = [$user_id];
-        $idx = 2;
     } else {
         $sql = "
             SELECT EXTRACT(YEAR FROM date) AS y, EXTRACT(WEEK FROM date) AS w,
-                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1
+            GROUP BY y, w
+            ORDER BY y DESC, w DESC
+            LIMIT 2
         ";
-        $params = [$user_id];
-        $idx = 2;
     }
-
-    // Thêm điều kiện lọc
-    if ($filter_account > 0) {
-        $sql .= " AND account_id = \${$idx}";
-        $params[] = $filter_account;
-        $idx++;
-    }
-    if ($filter_type !== 'all') {
-        $sql .= " AND type = \${$idx}";
-        $params[] = intval($filter_type);
-        $idx++;
-    }
-    if ($filter_description !== '') {
-        if ($filter_description === 'Tạo khoản tiền mới') {
-            $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
-        } else {
-            $sql .= " AND description ILIKE \${$idx}";
-            $params[] = "%{$filter_description}%";
-            $idx++;
-        }
-    }
-    if ($from_date) {
-        $sql .= " AND DATE(date) >= \${$idx}";
-        $params[] = $from_date;
-        $idx++;
-    }
-    if ($to_date) {
-        $sql .= " AND DATE(date) <= \${$idx}";
-        $params[] = $to_date;
-        $idx++;
-    }
-
-    // Kết thúc truy vấn
-    $sql .= ($chartType === 'line')
-        ? " GROUP BY label ORDER BY label ASC"
-        : " GROUP BY y, w ORDER BY y DESC, w DESC LIMIT 2";
-
 } elseif ($mode === 'month') {
     if ($chartType === 'line') {
         $sql = "
             SELECT DATE(date) AS label,
-                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '29 days'
+            GROUP BY label
+            ORDER BY label ASC
         ";
-        $params = [$user_id];
-        $idx = 2;
     } else {
         $sql = "
             SELECT EXTRACT(YEAR FROM date) AS y, EXTRACT(MONTH FROM date) AS m,
-                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1
+            GROUP BY y, m
+            ORDER BY y DESC, m DESC
+            LIMIT 2
         ";
-        $params = [$user_id];
-        $idx = 2;
     }
-
-    // Thêm điều kiện lọc
-    if ($filter_account > 0) {
-        $sql .= " AND account_id = \${$idx}";
-        $params[] = $filter_account;
-        $idx++;
-    }
-    if ($filter_type !== 'all') {
-        $sql .= " AND type = \${$idx}";
-        $params[] = intval($filter_type);
-        $idx++;
-    }
-    if ($filter_description !== '') {
-        if ($filter_description === 'Tạo khoản tiền mới') {
-            $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
-        } else {
-            $sql .= " AND description ILIKE \${$idx}";
-            $params[] = "%{$filter_description}%";
-            $idx++;
-        }
-    }
-    if ($from_date) {
-        $sql .= " AND DATE(date) >= \${$idx}";
-        $params[] = $from_date;
-        $idx++;
-    }
-    if ($to_date) {
-        $sql .= " AND DATE(date) <= \${$idx}";
-        $params[] = $to_date;
-        $idx++;
-    }
-
-    // Kết thúc truy vấn
-    $sql .= ($chartType === 'line')
-        ? " GROUP BY label ORDER BY label ASC"
-        : " GROUP BY y, m ORDER BY y DESC, m DESC LIMIT 2";
 }
-
 
 $params = [$user_id];
 $result = pg_query_params($conn, $sql, $params);
@@ -210,47 +93,8 @@ if ($chartType === 'line') {
     }
 }
 
-$idx = count($params) + 1;
-
-if ($filter_account > 0) {
-    $sql .= " AND account_id = \${$idx}";
-    $params[] = $filter_account;
-    $idx++;
-}
-if ($filter_type !== 'all') {
-    $sql .= " AND type = \${$idx}";
-    $params[] = intval($filter_type);
-    $idx++;
-}
-if ($filter_description !== '') {
-    if ($filter_description === 'Tạo khoản tiền mới') {
-        $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
-    } else {
-        $sql .= " AND description ILIKE \${$idx}";
-        $params[] = "%{$filter_description}%";
-        $idx++;
-    }
-}
-if ($from_date) {
-    $sql .= " AND DATE(date) >= \${$idx}";
-    $params[] = $from_date;
-    $idx++;
-}
-if ($to_date) {
-    $sql .= " AND DATE(date) <= \${$idx}";
-    $params[] = $to_date;
-    $idx++;
-}
-
 $index = 0;
 while ($row = pg_fetch_assoc($result)) {
-    if ($chartType === 'line' && $mode === 'year') {
-        $month = (int)$row['label'];
-        if (isset($fullDates[$month])) {
-            $fullDates[$month]['thu'] = (float)$row['thu'];
-            $fullDates[$month]['chi'] = (float)$row['chi'];
-        }
-    }
     if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         $date = $row['label']; // định dạng 'Y-m-d'
         if (isset($fullDates[$date])) {
@@ -291,13 +135,7 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         $chi_data[] = $data['chi'];
     }
 }
-if ($chartType === 'line' && $mode === 'year') {
-    foreach ($fullDates as $month => $data) {
-        $labels[] = "Tháng $month";
-        $thu_data[] = $data['thu'];
-        $chi_data[] = $data['chi'];
-    }
-}
+
 ?>
 
 <!DOCTYPE html>
@@ -433,42 +271,16 @@ if ($chartType === 'line' && $mode === 'year') {
                 <option value="month" <?= $mode === 'month' ? 'selected' : '' ?>>Theo tháng</option>
                 <option value="year" <?= $mode === 'year' ? 'selected' : '' ?>>Theo năm</option>
             </select>
-        
+
+            <?php if ($mode !== 'year'): ?>
             <label>Biểu đồ:</label>
             <select name="chart">
                 <option value="pie" <?= $chartType === 'pie' ? 'selected' : '' ?>>Biểu đồ tròn</option>
                 <option value="line" <?= $chartType === 'line' ? 'selected' : '' ?>>Biểu đồ đường</option>
             </select>
-        
-            <label>Từ ngày:</label>
-            <input type="date" name="from_date" value="<?= $_GET['from_date'] ?? '' ?>">
-        
-            <label>Đến ngày:</label>
-            <input type="date" name="to_date" value="<?= $_GET['to_date'] ?? '' ?>">
-        
-            <label>Loại giao dịch:</label>
-            <select name="type">
-                <option value="all" <?= ($_GET['type'] ?? '') === 'all' ? 'selected' : '' ?>>Tất cả</option>
-                <option value="1" <?= ($_GET['type'] ?? '') === '1' ? 'selected' : '' ?>>Thu</option>
-                <option value="2" <?= ($_GET['type'] ?? '') === '2' ? 'selected' : '' ?>>Chi</option>
-            </select>
-        
-            <label>Mô tả:</label>
-            <input type="text" name="description" value="<?= $_GET['description'] ?? '' ?>" placeholder="Nhập mô tả...">
-        
-            <label>Khoản tiền:</label>
-            <select name="account_id">
-                <option value="0">Tất cả</option>
-                <?php
-                $acc_result = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_id = $1", [$user_id]);
-                while ($acc = pg_fetch_assoc($acc_result)) {
-                    $selected = ($_GET['account_id'] ?? '') == $acc['id'] ? 'selected' : '';
-                    echo "<option value=\"{$acc['id']}\" $selected>{$acc['name']}</option>";
-                }
-                ?>
-            </select>
-        
-            <button type="submit">📊 Xem thống kê</button>
+            <?php endif; ?>
+
+            <button type="submit">Xem</button>
         </form>
     </div>
 
@@ -510,22 +322,22 @@ if ($chartType === 'line' && $mode === 'year') {
             </p>
         </div>
     </div>
-    <?php elseif ($chartType === 'line' && ($mode === 'week' || $mode === 'month')): ?>
+    <?php else: ?>
+    <?php if ($chartType === 'line'): ?>
         <canvas id="myChart" class="line-chart"></canvas>
-        <p style="text-align:center; margin-top: 20px;">
-            Tổng thu: <strong><?= number_format(array_sum($thu_data), 0, ',', '.') ?> VND</strong><br>
-            Tổng chi: <strong><?= number_format(array_sum($chi_data), 0, ',', '.') ?> VND</strong>
-        </p>
-    <?php elseif ($chartType === 'line' && $mode === 'year'): ?>
-        <canvas id="myChart" class="line-chart" style="max-width: 100%; height: 400px;"></canvas>
+    <?php endif; ?>
+    <?php if ($chartType === 'line'): ?>
         <p style="text-align:center; margin-top: 20px;">
             Tổng thu: <strong><?= number_format(array_sum($thu_data), 0, ',', '.') ?> VND</strong><br>
             Tổng chi: <strong><?= number_format(array_sum($chi_data), 0, ',', '.') ?> VND</strong>
         </p>
     <?php endif; ?>
+
+    <?php endif; ?>
+
     <a href="dashboard.php">← Quay lại Dashboard</a>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 const mode = <?= json_encode($mode) ?>;
 const chartType = <?= json_encode($chartType) ?>;
@@ -533,8 +345,7 @@ const labels = <?= json_encode($labels) ?>;
 const thu = <?= json_encode($thu_data) ?>;
 const chi = <?= json_encode($chi_data) ?>;
 
-// Biểu đồ đường cho tuần, tháng, năm
-if (chartType === 'line') {
+if (chartType === 'line' && mode !== 'year') {
     const ctx = document.getElementById('myChart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
@@ -561,12 +372,6 @@ if (chartType === 'line') {
         },
         options: {
             responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: mode === 'year' ? 'Biểu đồ 12 tháng' : (mode === 'month' ? 'Biểu đồ tháng này' : 'Biểu đồ tuần này')
-                }
-            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -577,10 +382,7 @@ if (chartType === 'line') {
             }
         }
     });
-}
-
-// Biểu đồ tròn cho năm
-if (mode === 'year' && chartType === 'pie') {
+} else if (mode === 'year') {
     const ctx1 = document.getElementById('pieChart1').getContext('2d');
     new Chart(ctx1, {
         type: 'pie',
@@ -620,10 +422,8 @@ if (mode === 'year' && chartType === 'pie') {
             }
         }
     });
-}
 
-// Biểu đồ tròn cho tuần/tháng
-if ((mode === 'week' || mode === 'month') && chartType === 'pie') {
+} else if ((mode === 'week' || mode === 'month') && chartType === 'pie') {
     const ctx1 = document.getElementById('pieChart1').getContext('2d');
     new Chart(ctx1, {
         type: 'pie',
@@ -634,14 +434,7 @@ if ((mode === 'week' || mode === 'month') && chartType === 'pie') {
                 backgroundColor: ['#28a745', '#dc3545']
             }]
         },
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: <?= json_encode($labels[0] ?? '') ?>
-                }
-            }
-        }
+        options: {plugins: {title: {display: true, text: <?= json_encode($labels[0] ?? '') ?>}}}
     });
 
     const ctx2 = document.getElementById('pieChart2').getContext('2d');
@@ -654,19 +447,9 @@ if ((mode === 'week' || mode === 'month') && chartType === 'pie') {
                 backgroundColor: ['#28a745', '#dc3545']
             }]
         },
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: <?= json_encode($labels2[0] ?? '') ?>
-                }
-            }
-        }
+        options: {plugins: {title: {display: true, text: <?= json_encode($labels2[0] ?? '') ?>}}}
     });
-}
-
-// Biểu đồ tròn mặc định nếu không khớp điều kiện nào
-if (chartType === 'pie' && typeof pieChart1 === 'undefined' && typeof pieChart2 === 'undefined') {
+} else {
     const ctx = document.getElementById('myChart').getContext('2d');
     new Chart(ctx, {
         type: 'pie',
