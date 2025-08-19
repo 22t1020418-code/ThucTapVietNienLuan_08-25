@@ -155,7 +155,7 @@ while ($row = pg_fetch_assoc($result)) {
 }
 if ($chartType === 'line' && $mode === 'year') {
     foreach ($fullDates as $label => $data) {
-        $labels[] = date('m/Y', strtotime($label . '-01'));
+        $labels[] = date('M Y', strtotime($label . '-01')); // ví dụ: Aug 2025
         $thu_data[] = $data['thu'];
         $chi_data[] = $data['chi'];
     }
