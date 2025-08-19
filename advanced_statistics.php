@@ -74,10 +74,27 @@ if ($mode === 'year') {
     }
 }
 
+if ($mode === 'year' && $chartType === 'line') {
+    $sql = "
+        SELECT EXTRACT(MONTH FROM date) AS label,
+               SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+               SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+        FROM transactions
+        WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
+        GROUP BY label
+        ORDER BY label ASC
+    ";
+}
+
 $params = [$user_id];
 $result = pg_query_params($conn, $sql, $params);
 
 $fullDates = [];
+if ($chartType === 'line' && $mode === 'year') {
+    for ($i = 1; $i <= 12; $i++) {
+        $fullDates[$i] = ['thu' => 0, 'chi' => 0];
+    }
+}
 
 if ($chartType === 'line') {
     if ($mode === 'week') {
@@ -95,6 +112,13 @@ if ($chartType === 'line') {
 
 $index = 0;
 while ($row = pg_fetch_assoc($result)) {
+    if ($chartType === 'line' && $mode === 'year') {
+        $month = (int)$row['label'];
+        if (isset($fullDates[$month])) {
+            $fullDates[$month]['thu'] = (float)$row['thu'];
+            $fullDates[$month]['chi'] = (float)$row['chi'];
+        }
+    }
     if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         $date = $row['label']; // định dạng 'Y-m-d'
         if (isset($fullDates[$date])) {
@@ -128,6 +152,13 @@ while ($row = pg_fetch_assoc($result)) {
     }
     $index++;
 }
+if ($chartType === 'line' && $mode === 'year') {
+    foreach ($fullDates as $month => $data) {
+        $labels[] = "Tháng $month";
+        $thu_data[] = $data['thu'];
+        $chi_data[] = $data['chi'];
+    }
+}
 if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
     foreach ($fullDates as $date => $data) {
         $labels[] = date('d/m', strtotime($date));
@@ -135,7 +166,6 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         $chi_data[] = $data['chi'];
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -272,7 +302,7 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
                 <option value="year" <?= $mode === 'year' ? 'selected' : '' ?>>Theo năm</option>
             </select>
 
-            <?php if ($mode !== 'year'): ?>
+            <?php if (in_array($mode, ['week', 'month', 'year'])): ?>
             <label>Biểu đồ:</label>
             <select name="chart">
                 <option value="pie" <?= $chartType === 'pie' ? 'selected' : '' ?>>Biểu đồ tròn</option>
@@ -345,7 +375,7 @@ const labels = <?= json_encode($labels) ?>;
 const thu = <?= json_encode($thu_data) ?>;
 const chi = <?= json_encode($chi_data) ?>;
 
-if (chartType === 'line' && mode !== 'year') {
+if (chartType === 'line') {
     const ctx = document.getElementById('myChart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
