@@ -106,12 +106,6 @@ if ($chartType === 'line') {
         $fullDates = [];
     }
     switch ($mode) {
-        case 'year':
-            for ($i = 11; $i >= 0; $i--) {
-                $label = date('Y-m', strtotime("-$i months"));
-                $fullDates[$label] = ['thu' => 0, 'chi' => 0];
-            }
-            break;
         case 'month':
             for ($i = 29; $i >= 0; $i--) {
                 $label = date('Y-m-d', strtotime("-$i days"));
