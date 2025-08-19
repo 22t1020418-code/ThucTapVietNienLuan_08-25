@@ -18,8 +18,8 @@ $labels2 = $thu_data2 = $chi_data2 = [];
 if ($mode === 'year') {
     $sql = "
         SELECT EXTRACT(YEAR FROM date) AS label,
-            SUM(CASE WHEN type = 0 THEN amount ELSE 0 END) AS thu,
-            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS chi
+            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+            SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
         FROM transactions
         WHERE user_id = $1
         GROUP BY label
@@ -30,8 +30,8 @@ if ($mode === 'year') {
     if ($chartType === 'line') {
         $sql = "
             SELECT DATE(date) AS label,
-                SUM(CASE WHEN type = 0 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '8 days'
             GROUP BY label
@@ -40,8 +40,8 @@ if ($mode === 'year') {
     } else {
         $sql = "
             SELECT EXTRACT(YEAR FROM date) AS y, EXTRACT(WEEK FROM date) AS w,
-                SUM(CASE WHEN type = 0 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1
             GROUP BY y, w
@@ -53,8 +53,8 @@ if ($mode === 'year') {
     if ($chartType === 'line') {
         $sql = "
             SELECT DATE(date) AS label,
-                SUM(CASE WHEN type = 0 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '29 days'
             GROUP BY label
@@ -63,8 +63,8 @@ if ($mode === 'year') {
     } else {
         $sql = "
             SELECT EXTRACT(YEAR FROM date) AS y, EXTRACT(MONTH FROM date) AS m,
-                SUM(CASE WHEN type = 0 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS chi
+                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1
             GROUP BY y, m
