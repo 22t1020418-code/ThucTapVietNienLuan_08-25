@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $mode = $_GET['mode'] ?? 'month';
-$chartType = ($mode === 'year') ? 'pie' : ($_GET['chart'] ?? 'line');
+$chartType = $_GET['chart'] ?? (($mode === 'year') ? 'pie' : 'line');
 
 $labels = $thu_data = $chi_data = [];
 $labels2 = $thu_data2 = $chi_data2 = [];
