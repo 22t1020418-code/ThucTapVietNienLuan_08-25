@@ -91,10 +91,9 @@ $result = pg_query_params($conn, $sql, $params);
 
 $fullDates = [];
 if ($chartType === 'line' && $mode === 'year') {
-    $label = $row['label'];
-    if (isset($fullDates[$label])) {
-        $fullDates[$label]['thu'] = (float)$row['thu'];
-        $fullDates[$label]['chi'] = (float)$row['chi'];
+    for ($i = 11; $i >= 0; $i--) {
+        $monthLabel = date('Y-m', strtotime("-$i months"));
+        $fullDates[$monthLabel] = ['thu' => 0, 'chi' => 0];
     }
 }
 
@@ -115,10 +114,10 @@ if ($chartType === 'line') {
 $index = 0;
 while ($row = pg_fetch_assoc($result)) {
     if ($chartType === 'line' && $mode === 'year') {
-        $month = (int)$row['label'];
-        if (isset($fullDates[$month])) {
-            $fullDates[$month]['thu'] = (float)$row['thu'];
-            $fullDates[$month]['chi'] = (float)$row['chi'];
+        $label = $row['label']; // dạng 'YYYY-MM'
+        if (isset($fullDates[$label])) {
+            $fullDates[$label]['thu'] = (float)$row['thu'];
+            $fullDates[$label]['chi'] = (float)$row['chi'];
         }
     }
     if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
@@ -156,7 +155,7 @@ while ($row = pg_fetch_assoc($result)) {
 }
 if ($chartType === 'line' && $mode === 'year') {
     foreach ($fullDates as $label => $data) {
-        $labels[] = date('m/Y', strtotime($label));
+        $labels[] = date('m/Y', strtotime($label . '-01'));
         $thu_data[] = $data['thu'];
         $chi_data[] = $data['chi'];
     }
