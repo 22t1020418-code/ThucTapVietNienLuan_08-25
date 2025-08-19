@@ -117,26 +117,35 @@ if ($chartType === 'line') {
             break;
     }
 }
+// … trước đó bạn đã chạy pg_query_params và có $result
 
 $index = 0;
 while ($row = pg_fetch_assoc($result)) {
-    if ($chartType === 'line' && $mode === 'year') {
-        $label = $row['label']; // dạng 'YYYY-MM'
-        if (isset($fullDates[$label])) {
-            $fullDates[$label]['thu'] = (float)$row['thu'];
-            $fullDates[$label]['chi'] = (float)$row['chi'];
+    // 1) NHÁNH LINE
+    if ($chartType === 'line') {
+        if ($mode === 'year') {
+            // cập nhật vào fullDates[ 'YYYY-MM' ]
+            $label = $row['label']; 
+            if (isset($fullDates[$label])) {
+                $fullDates[$label]['thu'] = (float)$row['thu'];
+                $fullDates[$label]['chi'] = (float)$row['chi'];
+            }
+
+        } elseif ($mode === 'week' || $mode === 'month') {
+            // cập nhật vào fullDates[ 'YYYY-MM-DD' ]
+            $date = $row['label'];
+            if (isset($fullDates[$date])) {
+                $fullDates[$date]['thu'] = (float)$row['thu'];
+                $fullDates[$date]['chi'] = (float)$row['chi'];
+            }
         }
-    }
-    if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
-        $date = $row['label']; // định dạng 'Y-m-d'
-        if (isset($fullDates[$date])) {
-            $fullDates[$date]['thu'] = (float)$row['thu'];
-            $fullDates[$date]['chi'] = (float)$row['chi'];
-        }
+
+    // 2) NHÁNH PIE
     } else {
-        // giữ nguyên xử lý cũ cho pie và year
         if (($mode === 'week' || $mode === 'month') && $chartType === 'pie') {
-            $label = ($mode === 'week') ? "Tuần {$row['w']}/{$row['y']}" : "Tháng {$row['m']}/{$row['y']}";
+            $label = ($mode === 'week')
+                ? "Tuần {$row['w']}/{$row['y']}"
+                : "Tháng {$row['m']}/{$row['y']}";
             if ($index === 0) {
                 $labels[] = $label;
                 $thu_data[] = $row['thu'];
@@ -146,7 +155,8 @@ while ($row = pg_fetch_assoc($result)) {
                 $thu_data2[] = $row['thu'];
                 $chi_data2[] = $row['chi'];
             }
-        } elseif ($mode === 'year') {
+
+        } elseif ($mode === 'year' && $chartType === 'pie') {
             if ($index === 0) {
                 $labels[] = $row['label'];
                 $thu_data[] = $row['thu'];
@@ -158,20 +168,24 @@ while ($row = pg_fetch_assoc($result)) {
             }
         }
     }
+
     $index++;
 }
-if ($chartType === 'line' && $mode === 'year') {
-    foreach ($fullDates as $label => $data) {
-        $labels[] = date('M Y', strtotime($label . '-01')); // ví dụ: Aug 2025
-        $thu_data[] = $data['thu'];
-        $chi_data[] = $data['chi'];
-    }
-}
-if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
-    foreach ($fullDates as $date => $data) {
-        $labels[] = date('d/m', strtotime($date));
-        $thu_data[] = $data['thu'];
-        $chi_data[] = $data['chi'];
+
+// Cuối cùng: nếu line-chart thì build mảng labels/data từ $fullDates
+if ($chartType === 'line') {
+    if ($mode === 'year') {
+        foreach ($fullDates as $ym => $data) {
+            $labels[]   = date('M Y', strtotime($ym . '-01'));
+            $thu_data[] = $data['thu'];
+            $chi_data[] = $data['chi'];
+        }
+    } else {
+        foreach ($fullDates as $date => $data) {
+            $labels[]   = date('d/m', strtotime($date));
+            $thu_data[] = $data['thu'];
+            $chi_data[] = $data['chi'];
+        }
     }
 }
 ?>
