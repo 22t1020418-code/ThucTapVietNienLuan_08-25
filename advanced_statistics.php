@@ -1,4 +1,4 @@
-\<?php
+<?php
 session_start();
 include "db.php"; // Đảm bảo db.php dùng pg_connect()
 date_default_timezone_set('Asia/Ho_Chi_Minh');
