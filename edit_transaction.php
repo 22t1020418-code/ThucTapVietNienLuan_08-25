@@ -15,6 +15,27 @@ if (!$id) {
     exit();
 }
 
+$query = "SELECT * FROM transactions WHERE id = $1 AND user_id = $2";
+$result = pg_query_params($conn, $query, array($id, $user_id));
+$transaction = pg_fetch_assoc($result);
+if (!$result) {
+    echo "<p style='color:red;'>Lỗi truy vấn cơ sở dữ liệu.</p>";
+    exit();
+}
+
+if (!$transaction) {
+    echo "<p style='color:red;'>Không tìm thấy giao dịch cần sửa.</p>";
+    exit();
+}
+    $newType = $type_code;
+    $newAmount = $amount;
+    $sameDateTime = (new DateTime($transaction['date']))->format('Y-m-d H:i') === (new DateTime("$date_input $time"))->format('Y-m-d H:i');
+
+    // 👉 Gán các giá trị gốc để so sánh sau này
+    $oldType = intval($transaction['type']);
+    $oldAmount = floatval($transaction['amount']);
+    $oldAccountId = intval($transaction['account_id']);
+
     // 👉 Truy vấn giao dịch cũ
     $oldQuery = "SELECT type, amount, account_id FROM transactions WHERE id = $1 AND user_id = $2";
     $oldResult = pg_query_params($conn, $oldQuery, array($id, $user_id));
@@ -28,8 +49,7 @@ if (!$id) {
     $oldType       = intval($oldTransaction['type']);
     $oldAmount     = floatval($oldTransaction['amount']);
     $oldAccountId  = intval($oldTransaction['account_id']);
-    $newType       = $type_code;
-    $newAmount     = $amount;
+
 
 $query = "SELECT t.*, a.name AS account_name, a.balance AS current_balance
           FROM transactions t
@@ -37,11 +57,6 @@ $query = "SELECT t.*, a.name AS account_name, a.balance AS current_balance
           WHERE t.id = $1 AND t.user_id = $2";
 $result = pg_query_params($conn, $query, array($id, $user_id));
 $transaction = pg_fetch_assoc($result);
-
-// 👉 Xử lý ngày giờ
-$dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
-$formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
-$datetime = $formattedDate . ' ' . $time;
 
 // 👉 Khi người dùng cập nhật giao dịch
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -51,6 +66,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $account_id  = intval($_POST['account_id']);
     $date_input = $_POST['transaction_date'] ?? date('d/m/Y');
     $time = $_POST['transaction_time'] ?? date('H:i');
+
+// 👉 Xử lý ngày giờ
+$dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
+$formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
+$datetime = $formattedDate . ' ' . $time;
+
     
     $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
     $balance_data = pg_fetch_assoc($balance_q);
@@ -70,6 +91,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     $amount = floatval($sanitized);
+    $newType       = $type_code;
+    $newAmount     = $amount;
     if ($amount < 0) {
         echo "<p style='color:red;'>Số tiền phải lớn hơn 0.</p>";
         exit();
@@ -240,7 +263,7 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
         header("Location: dashboard.php");
         exit();
     }
-
+    $newAccountId = $account_id;
     $adjustment = 0;
 
     // Trừ giao dịch cũ
@@ -276,6 +299,10 @@ $current_balance = floatval($transaction['current_balance'] ?? 0);
 $transaction_type_code = intval($transaction['type'] ?? 0);
 $transaction_type = ($transaction_type_code === 1) ? 'thu' : (($transaction_type_code === 2) ? 'chi' : 'khác');
 $amount = floatval($transaction['amount'] ?? 0);
+if ($amount <= 0) {
+    echo "<p style='color:red;'>Số tiền phải lớn hơn 0.</p>";
+    exit();
+}
 $selected_content = $transaction['description'] ?? '';
 $datetime = $transaction['date'] ?? date('Y-m-d H:i');
 $date = date('Y-m-d', strtotime($datetime));
