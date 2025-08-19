@@ -56,6 +56,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "<p style='color:red;'>Số tiền vượt quá giới hạn (tối đa 1,000,000,000,000 VND).</p>";
         exit();
     }
+    if (!empty($transaction['date'])) {
+    $oldDateTime = new DateTime($transaction['date']);
+    } else {
+        $oldDateTime = new DateTime(); // hoặc gán mặc định
+    }
+    $newDateTime  = new DateTime($datetime);
+    $sameDateTime = $oldDateTime == $newDateTime;
+
     // 👉 Kiểm tra nếu giao dịch là Thu và có thay đổi
     if ($type_code === 1) {
         if (
@@ -226,16 +234,6 @@ function recalculateRemainingBalance($conn, $user_id, $account_id) {
             array($adjustment, $account_id, $user_id)
         );
     }
-
-    if (!empty($transaction['date'])) {
-        $oldDateTime = new DateTime($transaction['date']);
-    } else {
-        $oldDateTime = new DateTime(); // hoặc gán mặc định
-    }
-    $newDateTime = new DateTime($datetime);
-    
-    $sameDateTime = $oldDateTime == $newDateTime;
-
     
     if ($oldType === $newType && $oldAmount === $newAmount && $oldAccountId === $account_id && $sameDateTime) {
         $_SESSION['message'] = "⚠️ Không có thay đổi nào được thực hiện.";
