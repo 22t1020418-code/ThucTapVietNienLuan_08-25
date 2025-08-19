@@ -127,19 +127,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         return $balance;
     }
 
-
-    // 👉 Kiểm tra nếu là giao dịch Chi thì số tiền không được vượt quá số dư
-    if ($type_code === 2) { // Chi
-        $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
-        $balance_data = pg_fetch_assoc($balance_q);
-        $current_balance = floatval($balance_data['balance'] ?? 0);
+    // sau khi có $oldType, $oldAmount, $oldAccountId, $sameDateTime
+    $skipBalanceCheck = (
+        $oldType      === $newType    &&
+        $oldAmount    === $newAmount  &&
+        $oldAccountId === $newAccountId &&
+        !$sameDateTime
+    );
     
-        // Nếu số tiền chi lớn hơn số dư hiện tại thì báo lỗi
-        if ($amount > $current_balance) {
-            echo "<p style='color:red;'>❌ Số tiền chi vượt quá số dư hiện tại của khoản tiền. Vui lòng nhập lại.</p>";
+    // Chỉ với loại Chi, và không phải chỉ đổi ngày
+    if ($type_code === 2 && !$skipBalanceCheck) {
+        $balanceQuery = <<<SQL
+            SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS bal
+            FROM transactions
+            WHERE account_id = $1
+              AND user_id    = $2
+              AND date       <= $3
+              AND id         != $4
+        SQL;
+    
+        $r = pg_query_params($conn, $balanceQuery, [
+            $newAccountId, $user_id, $datetime, $id
+        ]);
+    
+        if (!$r || pg_num_rows($r) === 0) {
+            echo "<p style='color:red;'>Không thể truy vấn số dư. Vui lòng thử lại.</p>";
+            exit();
+        }
+    
+        $row = pg_fetch_assoc($r);
+        $balanceBeforeUpdate = floatval($row['bal'] ?? 0);
+        $simulated_balance = $balanceBeforeUpdate - $newAmount;
+    
+        if ($simulated_balance < 0) {
+            echo "<div style='color:red; font-weight:bold;'>
+                   ⚠️ Số dư sẽ âm tại thời điểm mới. Vui lòng chọn ngày khác hoặc giảm số tiền chi.
+                 </div>";
             exit();
         }
     }
+
 
     // 👉 Tính toán ảnh hưởng đến số dư
     $delta = 0;
@@ -150,36 +177,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($newType === 1) { $delta += $newAmount; } // Thu
     elseif ($newType === 2) { $delta -= $newAmount; } // Chi
     
-// 👉 Kiểm tra nếu giao dịch là Chi
-if ($type_code === 2) {
-    // 👉 Nếu chỉ thay đổi ngày → bỏ qua kiểm tra số dư
-    if (
-        $oldType === $newType &&
-        $oldAmount === $newAmount &&
-        $oldAccountId === $account_id &&
-        !$sameDateTime
-    ) {
-        // Không cần kiểm tra số dư
-    } else {
-        // 👉 Truy vấn số dư tại thời điểm mới (loại trừ giao dịch cũ)
-        $balanceQuery = "
-            SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS balance
-            FROM transactions
-            WHERE account_id = $1 AND user_id = $2 AND date <= $3 AND id != $4
-        ";
-        $balanceResult = pg_query_params($conn, $balanceQuery, array($account_id, $user_id, $datetime, $id));
-        $balanceRow = pg_fetch_assoc($balanceResult);
-        $balanceAtTransaction = floatval($balanceRow['balance'] ?? 0);
-
-        // 👉 Tính số dư giả lập sau khi thêm giao dịch mới
-        $simulated_balance = $balanceAtTransaction - $amount;
-
-        if ($simulated_balance < 0) {
-            echo "<div style='color:red; font-weight:bold;'>⚠️ Số dư sẽ bị âm tại thời điểm mới. Vui lòng chọn ngày khác hoặc giảm số tiền chi.</div>";
-            exit();
-        }
-    }
-}
 
     $balanceQuery = "
         SELECT SUM(CASE WHEN type = 1 THEN amount ELSE -amount END) AS balance
