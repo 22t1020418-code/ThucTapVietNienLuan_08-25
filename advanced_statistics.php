@@ -15,6 +15,12 @@ $chartType = ($mode === 'year') ? 'pie' : ($_GET['chart'] ?? 'line');
 $labels = $thu_data = $chi_data = [];
 $labels2 = $thu_data2 = $chi_data2 = [];
 
+$filter_account = isset($_GET['account_id']) ? intval($_GET['account_id']) : 0;
+$filter_type = $_GET['type'] ?? 'all';
+$filter_description = trim($_GET['description'] ?? '');
+$from_date = $_GET['from_date'] ?? '';
+$to_date = $_GET['to_date'] ?? '';
+
 if ($mode === 'year' && $chartType === 'line') {
     $currentYear = date('Y');
     $sql = "
@@ -23,62 +29,167 @@ if ($mode === 'year' && $chartType === 'line') {
                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
         FROM transactions
         WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2
-        GROUP BY label
-        ORDER BY label ASC
     ";
     $params = [$user_id, $currentYear];
+    $idx = 3; // bắt đầu từ $3 vì đã dùng $1 và $2
+
+    // Thêm điều kiện lọc nếu có
+    if ($filter_account > 0) {
+        $sql .= " AND account_id = \${$idx}";
+        $params[] = $filter_account;
+        $idx++;
+    }
+    if ($filter_type !== 'all') {
+        $sql .= " AND type = \${$idx}";
+        $params[] = intval($filter_type);
+        $idx++;
+    }
+    if ($filter_description !== '') {
+        if ($filter_description === 'Tạo khoản tiền mới') {
+            $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
+        } else {
+            $sql .= " AND description ILIKE \${$idx}";
+            $params[] = "%{$filter_description}%";
+            $idx++;
+        }
+    }
+    if ($from_date) {
+        $sql .= " AND DATE(date) >= \${$idx}";
+        $params[] = $from_date;
+        $idx++;
+    }
+    if ($to_date) {
+        $sql .= " AND DATE(date) <= \${$idx}";
+        $params[] = $to_date;
+        $idx++;
+    }
+
+    // Kết thúc truy vấn
+    $sql .= " GROUP BY label ORDER BY label ASC";
 
     // Khởi tạo mảng 12 tháng
     for ($i = 1; $i <= 12; $i++) {
         $fullDates[$i] = ['thu' => 0, 'chi' => 0];
     }
-} elseif ($mode === 'week') {
+ } elseif ($mode === 'week') {
     if ($chartType === 'line') {
         $sql = "
             SELECT DATE(date) AS label,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '8 days'
-            GROUP BY label
-            ORDER BY label ASC
         ";
+        $params = [$user_id];
+        $idx = 2;
     } else {
         $sql = "
             SELECT EXTRACT(YEAR FROM date) AS y, EXTRACT(WEEK FROM date) AS w,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1
-            GROUP BY y, w
-            ORDER BY y DESC, w DESC
-            LIMIT 2
         ";
+        $params = [$user_id];
+        $idx = 2;
     }
+
+    // Thêm điều kiện lọc
+    if ($filter_account > 0) {
+        $sql .= " AND account_id = \${$idx}";
+        $params[] = $filter_account;
+        $idx++;
+    }
+    if ($filter_type !== 'all') {
+        $sql .= " AND type = \${$idx}";
+        $params[] = intval($filter_type);
+        $idx++;
+    }
+    if ($filter_description !== '') {
+        if ($filter_description === 'Tạo khoản tiền mới') {
+            $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
+        } else {
+            $sql .= " AND description ILIKE \${$idx}";
+            $params[] = "%{$filter_description}%";
+            $idx++;
+        }
+    }
+    if ($from_date) {
+        $sql .= " AND DATE(date) >= \${$idx}";
+        $params[] = $from_date;
+        $idx++;
+    }
+    if ($to_date) {
+        $sql .= " AND DATE(date) <= \${$idx}";
+        $params[] = $to_date;
+        $idx++;
+    }
+
+    // Kết thúc truy vấn
+    $sql .= ($chartType === 'line')
+        ? " GROUP BY label ORDER BY label ASC"
+        : " GROUP BY y, w ORDER BY y DESC, w DESC LIMIT 2";
+
 } elseif ($mode === 'month') {
     if ($chartType === 'line') {
         $sql = "
             SELECT DATE(date) AS label,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1 AND date >= CURRENT_DATE - INTERVAL '29 days'
-            GROUP BY label
-            ORDER BY label ASC
         ";
+        $params = [$user_id];
+        $idx = 2;
     } else {
         $sql = "
             SELECT EXTRACT(YEAR FROM date) AS y, EXTRACT(MONTH FROM date) AS m,
-                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+                   SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+                   SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
             FROM transactions
             WHERE user_id = $1
-            GROUP BY y, m
-            ORDER BY y DESC, m DESC
-            LIMIT 2
         ";
+        $params = [$user_id];
+        $idx = 2;
     }
+
+    // Thêm điều kiện lọc
+    if ($filter_account > 0) {
+        $sql .= " AND account_id = \${$idx}";
+        $params[] = $filter_account;
+        $idx++;
+    }
+    if ($filter_type !== 'all') {
+        $sql .= " AND type = \${$idx}";
+        $params[] = intval($filter_type);
+        $idx++;
+    }
+    if ($filter_description !== '') {
+        if ($filter_description === 'Tạo khoản tiền mới') {
+            $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
+        } else {
+            $sql .= " AND description ILIKE \${$idx}";
+            $params[] = "%{$filter_description}%";
+            $idx++;
+        }
+    }
+    if ($from_date) {
+        $sql .= " AND DATE(date) >= \${$idx}";
+        $params[] = $from_date;
+        $idx++;
+    }
+    if ($to_date) {
+        $sql .= " AND DATE(date) <= \${$idx}";
+        $params[] = $to_date;
+        $idx++;
+    }
+
+    // Kết thúc truy vấn
+    $sql .= ($chartType === 'line')
+        ? " GROUP BY label ORDER BY label ASC"
+        : " GROUP BY y, m ORDER BY y DESC, m DESC LIMIT 2";
 }
+
 
 $params = [$user_id];
 $result = pg_query_params($conn, $sql, $params);
@@ -97,6 +208,38 @@ if ($chartType === 'line') {
             $fullDates[$date] = ['thu' => 0, 'chi' => 0];
         }
     }
+}
+
+$idx = count($params) + 1;
+
+if ($filter_account > 0) {
+    $sql .= " AND account_id = \${$idx}";
+    $params[] = $filter_account;
+    $idx++;
+}
+if ($filter_type !== 'all') {
+    $sql .= " AND type = \${$idx}";
+    $params[] = intval($filter_type);
+    $idx++;
+}
+if ($filter_description !== '') {
+    if ($filter_description === 'Tạo khoản tiền mới') {
+        $sql .= " AND description ILIKE 'Tạo tài khoản mới:%'";
+    } else {
+        $sql .= " AND description ILIKE \${$idx}";
+        $params[] = "%{$filter_description}%";
+        $idx++;
+    }
+}
+if ($from_date) {
+    $sql .= " AND DATE(date) >= \${$idx}";
+    $params[] = $from_date;
+    $idx++;
+}
+if ($to_date) {
+    $sql .= " AND DATE(date) <= \${$idx}";
+    $params[] = $to_date;
+    $idx++;
 }
 
 $index = 0;
@@ -290,14 +433,42 @@ if ($chartType === 'line' && $mode === 'year') {
                 <option value="month" <?= $mode === 'month' ? 'selected' : '' ?>>Theo tháng</option>
                 <option value="year" <?= $mode === 'year' ? 'selected' : '' ?>>Theo năm</option>
             </select>
-
+        
             <label>Biểu đồ:</label>
             <select name="chart">
                 <option value="pie" <?= $chartType === 'pie' ? 'selected' : '' ?>>Biểu đồ tròn</option>
                 <option value="line" <?= $chartType === 'line' ? 'selected' : '' ?>>Biểu đồ đường</option>
             </select>
-
-            <button type="submit">Xem</button>
+        
+            <label>Từ ngày:</label>
+            <input type="date" name="from_date" value="<?= $_GET['from_date'] ?? '' ?>">
+        
+            <label>Đến ngày:</label>
+            <input type="date" name="to_date" value="<?= $_GET['to_date'] ?? '' ?>">
+        
+            <label>Loại giao dịch:</label>
+            <select name="type">
+                <option value="all" <?= ($_GET['type'] ?? '') === 'all' ? 'selected' : '' ?>>Tất cả</option>
+                <option value="1" <?= ($_GET['type'] ?? '') === '1' ? 'selected' : '' ?>>Thu</option>
+                <option value="2" <?= ($_GET['type'] ?? '') === '2' ? 'selected' : '' ?>>Chi</option>
+            </select>
+        
+            <label>Mô tả:</label>
+            <input type="text" name="description" value="<?= $_GET['description'] ?? '' ?>" placeholder="Nhập mô tả...">
+        
+            <label>Khoản tiền:</label>
+            <select name="account_id">
+                <option value="0">Tất cả</option>
+                <?php
+                $acc_result = pg_query_params($conn, "SELECT id, name FROM accounts WHERE user_id = $1", [$user_id]);
+                while ($acc = pg_fetch_assoc($acc_result)) {
+                    $selected = ($_GET['account_id'] ?? '') == $acc['id'] ? 'selected' : '';
+                    echo "<option value=\"{$acc['id']}\" $selected>{$acc['name']}</option>";
+                }
+                ?>
+            </select>
+        
+            <button type="submit">📊 Xem thống kê</button>
         </form>
     </div>
 
