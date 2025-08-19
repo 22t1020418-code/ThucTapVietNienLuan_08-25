@@ -76,11 +76,11 @@ if ($mode === 'year') {
 
 if ($mode === 'year' && $chartType === 'line') {
     $sql = "
-        SELECT EXTRACT(MONTH FROM date) AS label,
+        SELECT TO_CHAR(date, 'YYYY-MM') AS label,
                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
         FROM transactions
-        WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
+        WHERE user_id = $1 AND date >= (CURRENT_DATE - INTERVAL '12 months')
         GROUP BY label
         ORDER BY label ASC
     ";
@@ -91,8 +91,10 @@ $result = pg_query_params($conn, $sql, $params);
 
 $fullDates = [];
 if ($chartType === 'line' && $mode === 'year') {
-    for ($i = 1; $i <= 12; $i++) {
-        $fullDates[$i] = ['thu' => 0, 'chi' => 0];
+    $label = $row['label'];
+    if (isset($fullDates[$label])) {
+        $fullDates[$label]['thu'] = (float)$row['thu'];
+        $fullDates[$label]['chi'] = (float)$row['chi'];
     }
 }
 
@@ -153,8 +155,8 @@ while ($row = pg_fetch_assoc($result)) {
     $index++;
 }
 if ($chartType === 'line' && $mode === 'year') {
-    foreach ($fullDates as $month => $data) {
-        $labels[] = "Tháng $month";
+    foreach ($fullDates as $label => $data) {
+        $labels[] = date('m/Y', strtotime($label));
         $thu_data[] = $data['thu'];
         $chi_data[] = $data['chi'];
     }
@@ -314,7 +316,7 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         </form>
     </div>
 
-    <?php if (isset($_GET['mode']) && $mode === 'year'): ?>
+    <?php if ($mode === 'year' && $chartType === 'pie'): ?>
     <div class="pie-row">
         <div>
             <canvas id="pieChart2" class="pie-chart"></canvas>
