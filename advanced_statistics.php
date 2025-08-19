@@ -77,36 +77,65 @@ if ($mode === 'year') {
 $params = [$user_id];
 $result = pg_query_params($conn, $sql, $params);
 
+$fullDates = [];
+
+if ($chartType === 'line') {
+    if ($mode === 'week') {
+        for ($i = 7; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $fullDates[$date] = ['thu' => 0, 'chi' => 0];
+        }
+    } elseif ($mode === 'month') {
+        for ($i = 29; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $fullDates[$date] = ['thu' => 0, 'chi' => 0];
+        }
+    }
+}
+
 $index = 0;
 while ($row = pg_fetch_assoc($result)) {
-    if (($mode === 'week' || $mode === 'month') && $chartType === 'pie') {
-        $label = ($mode === 'week') ? "Tuần {$row['w']}/{$row['y']}" : "Tháng {$row['m']}/{$row['y']}";
-        if ($index === 0) {
-            $labels[] = $label;
-            $thu_data[] = $row['thu'];
-            $chi_data[] = $row['chi'];
-        } else {
-            $labels2[] = $label;
-            $thu_data2[] = $row['thu'];
-            $chi_data2[] = $row['chi'];
-        }
-    } elseif ($mode === 'year') {
-        if ($index === 0) {
-            $labels[] = $row['label'];
-            $thu_data[] = $row['thu'];
-            $chi_data[] = $row['chi'];
-        } else {
-            $labels2[] = $row['label'];
-            $thu_data2[] = $row['thu'];
-            $chi_data2[] = $row['chi'];
+    if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
+        $date = $row['label']; // định dạng 'Y-m-d'
+        if (isset($fullDates[$date])) {
+            $fullDates[$date]['thu'] = (float)$row['thu'];
+            $fullDates[$date]['chi'] = (float)$row['chi'];
         }
     } else {
-        $labels[] = $row['label'];
-        $thu_data[] = $row['thu'];
-        $chi_data[] = $row['chi'];
+        // giữ nguyên xử lý cũ cho pie và year
+        if (($mode === 'week' || $mode === 'month') && $chartType === 'pie') {
+            $label = ($mode === 'week') ? "Tuần {$row['w']}/{$row['y']}" : "Tháng {$row['m']}/{$row['y']}";
+            if ($index === 0) {
+                $labels[] = $label;
+                $thu_data[] = $row['thu'];
+                $chi_data[] = $row['chi'];
+            } else {
+                $labels2[] = $label;
+                $thu_data2[] = $row['thu'];
+                $chi_data2[] = $row['chi'];
+            }
+        } elseif ($mode === 'year') {
+            if ($index === 0) {
+                $labels[] = $row['label'];
+                $thu_data[] = $row['thu'];
+                $chi_data[] = $row['chi'];
+            } else {
+                $labels2[] = $row['label'];
+                $thu_data2[] = $row['thu'];
+                $chi_data2[] = $row['chi'];
+            }
+        }
     }
     $index++;
 }
+if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
+    foreach ($fullDates as $date => $data) {
+        $labels[] = date('d/m', strtotime($date));
+        $thu_data[] = $data['thu'];
+        $chi_data[] = $data['chi'];
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
