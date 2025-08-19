@@ -15,12 +15,33 @@ if (!$id) {
     exit();
 }
 
+    // 👉 Truy vấn giao dịch cũ
+    $oldQuery = "SELECT type, amount, account_id FROM transactions WHERE id = $1 AND user_id = $2";
+    $oldResult = pg_query_params($conn, $oldQuery, array($id, $user_id));
+    $oldTransaction = pg_fetch_assoc($oldResult);
+
+    if (!$oldTransaction) {
+        echo "<p style='color:red;'>Không tìm thấy giao dịch cũ.</p>";
+        exit();
+    }
+
+    $oldType       = intval($oldTransaction['type']);
+    $oldAmount     = floatval($oldTransaction['amount']);
+    $oldAccountId  = intval($oldTransaction['account_id']);
+    $newType       = $type_code;
+    $newAmount     = $amount;
+
 $query = "SELECT t.*, a.name AS account_name, a.balance AS current_balance
           FROM transactions t
           JOIN accounts a ON t.account_id = a.id
           WHERE t.id = $1 AND t.user_id = $2";
 $result = pg_query_params($conn, $query, array($id, $user_id));
 $transaction = pg_fetch_assoc($result);
+
+// 👉 Xử lý ngày giờ
+$dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
+$formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
+$datetime = $formattedDate . ' ' . $time;
 
 // 👉 Khi người dùng cập nhật giao dịch
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -114,27 +135,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit();
         }
     }
-    
-    // 👉 Truy vấn giao dịch cũ
-    $oldQuery = "SELECT type, amount, account_id FROM transactions WHERE id = $1 AND user_id = $2";
-    $oldResult = pg_query_params($conn, $oldQuery, array($id, $user_id));
-    $oldTransaction = pg_fetch_assoc($oldResult);
-
-    if (!$oldTransaction) {
-        echo "<p style='color:red;'>Không tìm thấy giao dịch cũ.</p>";
-        exit();
-    }
-
-    $oldType       = intval($oldTransaction['type']);
-    $oldAmount     = floatval($oldTransaction['amount']);
-    $oldAccountId  = intval($oldTransaction['account_id']);
-    $newType       = $type_code;
-    $newAmount     = $amount;
-
-    // 👉 Xử lý ngày giờ
-    $dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
-    $formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
-    $datetime = $formattedDate . ' ' . $time;
 
     // 👉 Tính toán ảnh hưởng đến số dư
     $delta = 0;
