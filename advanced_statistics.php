@@ -75,39 +75,55 @@ if ($mode === 'year') {
 }
 
 if ($mode === 'year' && $chartType === 'line') {
+    $fullDates = [];
+    $monthList = [];
+    for ($i = 11; $i >= 0; $i--) {
+        $monthLabel = date('Y-m', strtotime("-$i months"));
+        $fullDates[$monthLabel] = ['thu' => 0, 'chi' => 0];
+        $monthList[] = $monthLabel;
+    }
+
+    $placeholders = implode(',', array_map(fn($i) => '$' . ($i + 2), array_keys($monthList)));
     $sql = "
         SELECT TO_CHAR(date, 'YYYY-MM') AS label,
                SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
                SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
         FROM transactions
-        WHERE user_id = $1 AND date >= (CURRENT_DATE - INTERVAL '12 months')
+        WHERE user_id = $1 AND TO_CHAR(date, 'YYYY-MM') IN ($placeholders)
         GROUP BY label
         ORDER BY label ASC
     ";
+    $params = array_merge([$user_id], $monthList);
 }
 
-$params = [$user_id];
+if (!isset($params)) {
+    $params = [$user_id];
+}
 $result = pg_query_params($conn, $sql, $params);
 
-$fullDates = [];
-if ($chartType === 'line' && $mode === 'year') {
-    for ($i = 11; $i >= 0; $i--) {
-        $monthLabel = date('Y-m', strtotime("-$i months"));
-        $fullDates[$monthLabel] = ['thu' => 0, 'chi' => 0];
-    }
-}
-
 if ($chartType === 'line') {
-    if ($mode === 'week') {
-        for ($i = 7; $i >= 0; $i--) {
-            $date = date('Y-m-d', strtotime("-$i days"));
-            $fullDates[$date] = ['thu' => 0, 'chi' => 0];
-        }
-    } elseif ($mode === 'month') {
-        for ($i = 29; $i >= 0; $i--) {
-            $date = date('Y-m-d', strtotime("-$i days"));
-            $fullDates[$date] = ['thu' => 0, 'chi' => 0];
-        }
+    if (!isset($fullDates)) {
+        $fullDates = [];
+    }
+    switch ($mode) {
+        case 'year':
+            for ($i = 11; $i >= 0; $i--) {
+                $label = date('Y-m', strtotime("-$i months"));
+                $fullDates[$label] = ['thu' => 0, 'chi' => 0];
+            }
+            break;
+        case 'month':
+            for ($i = 29; $i >= 0; $i--) {
+                $label = date('Y-m-d', strtotime("-$i days"));
+                $fullDates[$label] = ['thu' => 0, 'chi' => 0];
+            }
+            break;
+        case 'week':
+            for ($i = 7; $i >= 0; $i--) {
+                $label = date('Y-m-d', strtotime("-$i days"));
+                $fullDates[$label] = ['thu' => 0, 'chi' => 0];
+            }
+            break;
     }
 }
 
