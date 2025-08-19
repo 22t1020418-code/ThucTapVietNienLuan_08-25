@@ -70,16 +70,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $newType = $type_code;
     $newAmount = $amount;
     $newAccountId = $account_id;
-    $newDateTime = new DateTime("$date_input $time");
+    $newDateTime = DateTime::createFromFormat('d/m/Y H:i', "$date_input $time");
+    if (!$newDateTime) {
+        echo "<p style='color:red;'>❌ Định dạng ngày giờ không hợp lệ. Vui lòng kiểm tra lại.</p>";
+        exit();
+    }
+    $datetime = $newDateTime->format('Y-m-d H:i:s');
     $oldDateTimeObj = new DateTime($transaction['date']);
     $sameDateTime = $oldDateTimeObj->format('Y-m-d H:i') === $newDateTime->format('Y-m-d H:i');
-
-
-    // 👉 Xử lý ngày giờ
-    $dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
-    $formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
-    $datetime = $formattedDate . ' ' . $time;
-
     
     $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
     $balance_data = pg_fetch_assoc($balance_q);
@@ -113,8 +111,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $oldDateTime = new DateTime(); // hoặc gán mặc định
     }
-    $newDateTime  = new DateTime($datetime);
-    $sameDateTime = $oldDateTime == $newDateTime;
+    $newDateTime = DateTime::createFromFormat('d/m/Y H:i', "$date_input $time");
+    if (!$newDateTime) {
+        echo "<p style='color:red;'>❌ Định dạng ngày giờ không hợp lệ. Vui lòng kiểm tra lại.</p>";
+        exit();
+    }
+    $datetime = $newDateTime->format('Y-m-d H:i:s');
 
     // 👉 Kiểm tra nếu giao dịch là Thu và có thay đổi
     if ($type_code === 1) {
