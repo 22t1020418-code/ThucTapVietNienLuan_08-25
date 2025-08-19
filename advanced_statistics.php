@@ -15,17 +15,23 @@ $chartType = ($mode === 'year') ? 'pie' : ($_GET['chart'] ?? 'line');
 $labels = $thu_data = $chi_data = [];
 $labels2 = $thu_data2 = $chi_data2 = [];
 
-if ($mode === 'year') {
+if ($mode === 'year' && $chartType === 'line') {
+    $currentYear = date('Y');
     $sql = "
-        SELECT EXTRACT(YEAR FROM date) AS label,
-            SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
-            SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
+        SELECT EXTRACT(MONTH FROM date) AS label,
+               SUM(CASE WHEN type = 1 THEN amount ELSE 0 END) AS thu,
+               SUM(CASE WHEN type = 2 THEN amount ELSE 0 END) AS chi
         FROM transactions
-        WHERE user_id = $1
+        WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2
         GROUP BY label
-        ORDER BY label DESC
-        LIMIT 2
+        ORDER BY label ASC
     ";
+    $params = [$user_id, $currentYear];
+
+    // Khởi tạo mảng 12 tháng
+    for ($i = 1; $i <= 12; $i++) {
+        $fullDates[$i] = ['thu' => 0, 'chi' => 0];
+    }
 } elseif ($mode === 'week') {
     if ($chartType === 'line') {
         $sql = "
@@ -95,6 +101,13 @@ if ($chartType === 'line') {
 
 $index = 0;
 while ($row = pg_fetch_assoc($result)) {
+    if ($chartType === 'line' && $mode === 'year') {
+        $month = (int)$row['label'];
+        if (isset($fullDates[$month])) {
+            $fullDates[$month]['thu'] = (float)$row['thu'];
+            $fullDates[$month]['chi'] = (float)$row['chi'];
+        }
+    }
     if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         $date = $row['label']; // định dạng 'Y-m-d'
         if (isset($fullDates[$date])) {
@@ -135,7 +148,13 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
         $chi_data[] = $data['chi'];
     }
 }
-
+if ($chartType === 'line' && $mode === 'year') {
+    foreach ($fullDates as $month => $data) {
+        $labels[] = "Tháng $month";
+        $thu_data[] = $data['thu'];
+        $chi_data[] = $data['chi'];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -272,13 +291,11 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
                 <option value="year" <?= $mode === 'year' ? 'selected' : '' ?>>Theo năm</option>
             </select>
 
-            <?php if ($mode !== 'year'): ?>
             <label>Biểu đồ:</label>
             <select name="chart">
                 <option value="pie" <?= $chartType === 'pie' ? 'selected' : '' ?>>Biểu đồ tròn</option>
                 <option value="line" <?= $chartType === 'line' ? 'selected' : '' ?>>Biểu đồ đường</option>
             </select>
-            <?php endif; ?>
 
             <button type="submit">Xem</button>
         </form>
@@ -322,22 +339,22 @@ if ($chartType === 'line' && ($mode === 'week' || $mode === 'month')) {
             </p>
         </div>
     </div>
-    <?php else: ?>
-    <?php if ($chartType === 'line'): ?>
+    <?php elseif ($chartType === 'line' && ($mode === 'week' || $mode === 'month')): ?>
         <canvas id="myChart" class="line-chart"></canvas>
-    <?php endif; ?>
-    <?php if ($chartType === 'line'): ?>
+        <p style="text-align:center; margin-top: 20px;">
+            Tổng thu: <strong><?= number_format(array_sum($thu_data), 0, ',', '.') ?> VND</strong><br>
+            Tổng chi: <strong><?= number_format(array_sum($chi_data), 0, ',', '.') ?> VND</strong>
+        </p>
+    <?php elseif ($chartType === 'line' && $mode === 'year'): ?>
+        <canvas id="myChart" class="line-chart" style="max-width: 100%; height: 400px;"></canvas>
         <p style="text-align:center; margin-top: 20px;">
             Tổng thu: <strong><?= number_format(array_sum($thu_data), 0, ',', '.') ?> VND</strong><br>
             Tổng chi: <strong><?= number_format(array_sum($chi_data), 0, ',', '.') ?> VND</strong>
         </p>
     <?php endif; ?>
-
-    <?php endif; ?>
-
     <a href="dashboard.php">← Quay lại Dashboard</a>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const mode = <?= json_encode($mode) ?>;
 const chartType = <?= json_encode($chartType) ?>;
@@ -345,7 +362,8 @@ const labels = <?= json_encode($labels) ?>;
 const thu = <?= json_encode($thu_data) ?>;
 const chi = <?= json_encode($chi_data) ?>;
 
-if (chartType === 'line' && mode !== 'year') {
+// Biểu đồ đường cho tuần, tháng, năm
+if (chartType === 'line') {
     const ctx = document.getElementById('myChart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
@@ -372,6 +390,12 @@ if (chartType === 'line' && mode !== 'year') {
         },
         options: {
             responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: mode === 'year' ? 'Biểu đồ 12 tháng' : (mode === 'month' ? 'Biểu đồ tháng này' : 'Biểu đồ tuần này')
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -382,7 +406,10 @@ if (chartType === 'line' && mode !== 'year') {
             }
         }
     });
-} else if (mode === 'year') {
+}
+
+// Biểu đồ tròn cho năm
+if (mode === 'year' && chartType === 'pie') {
     const ctx1 = document.getElementById('pieChart1').getContext('2d');
     new Chart(ctx1, {
         type: 'pie',
@@ -422,8 +449,10 @@ if (chartType === 'line' && mode !== 'year') {
             }
         }
     });
+}
 
-} else if ((mode === 'week' || mode === 'month') && chartType === 'pie') {
+// Biểu đồ tròn cho tuần/tháng
+if ((mode === 'week' || mode === 'month') && chartType === 'pie') {
     const ctx1 = document.getElementById('pieChart1').getContext('2d');
     new Chart(ctx1, {
         type: 'pie',
@@ -434,7 +463,14 @@ if (chartType === 'line' && mode !== 'year') {
                 backgroundColor: ['#28a745', '#dc3545']
             }]
         },
-        options: {plugins: {title: {display: true, text: <?= json_encode($labels[0] ?? '') ?>}}}
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: <?= json_encode($labels[0] ?? '') ?>
+                }
+            }
+        }
     });
 
     const ctx2 = document.getElementById('pieChart2').getContext('2d');
@@ -447,9 +483,19 @@ if (chartType === 'line' && mode !== 'year') {
                 backgroundColor: ['#28a745', '#dc3545']
             }]
         },
-        options: {plugins: {title: {display: true, text: <?= json_encode($labels2[0] ?? '') ?>}}}
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: <?= json_encode($labels2[0] ?? '') ?>
+                }
+            }
+        }
     });
-} else {
+}
+
+// Biểu đồ tròn mặc định nếu không khớp điều kiện nào
+if (chartType === 'pie' && typeof pieChart1 === 'undefined' && typeof pieChart2 === 'undefined') {
     const ctx = document.getElementById('myChart').getContext('2d');
     new Chart(ctx, {
         type: 'pie',
