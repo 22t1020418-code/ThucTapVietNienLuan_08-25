@@ -793,7 +793,6 @@ $typeLabels = [
                     <option value="1" <?= $filter_type === '1'? 'selected':'' ?>>Thu</option>
                     <option value="2" <?= $filter_type === '2'? 'selected':'' ?>>Chi</option>
                     <option value="0" <?= $filter_type === '0'? 'selected':'' ?>>Cập nhật</option>
-                    <option value="3" <?= $filter_type === '3'? 'selected':'' ?>>Xóa</option>
                 </select>
               </div>
               <div class="form-group">
