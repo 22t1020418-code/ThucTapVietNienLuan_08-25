@@ -102,9 +102,6 @@ if (!isset($params)) {
 $result = pg_query_params($conn, $sql, $params);
 
 if ($chartType === 'line') {
-    if (!isset($fullDates)) {
-        $fullDates = [];
-    }
     switch ($mode) {
         case 'month':
             for ($i = 29; $i >= 0; $i--) {
