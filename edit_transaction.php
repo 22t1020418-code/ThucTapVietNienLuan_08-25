@@ -27,10 +27,6 @@ if (!$transaction) {
     echo "<p style='color:red;'>Không tìm thấy giao dịch cần sửa.</p>";
     exit();
 }
-    $newType = $type_code;
-    $newAmount = $amount;
-    $sameDateTime = (new DateTime($transaction['date']))->format('Y-m-d H:i') === (new DateTime("$date_input $time"))->format('Y-m-d H:i');
-
     // 👉 Gán các giá trị gốc để so sánh sau này
     $oldType = intval($transaction['type']);
     $oldAmount = floatval($transaction['amount']);
@@ -67,10 +63,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $date_input = $_POST['transaction_date'] ?? date('d/m/Y');
     $time = $_POST['transaction_time'] ?? date('H:i');
 
-// 👉 Xử lý ngày giờ
-$dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
-$formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
-$datetime = $formattedDate . ' ' . $time;
+    $type_code = intval($type);
+    $sanitized = preg_replace('/[^\d\.]/', '', $rawAmount);
+    $amount = floatval($sanitized);
+
+    $newType = $type_code;
+    $newAmount = $amount;
+    $newAccountId = $account_id;
+    $newDateTime = new DateTime("$date_input $time");
+    $oldDateTimeObj = new DateTime($transaction['date']);
+    $sameDateTime = $oldDateTimeObj->format('Y-m-d H:i') === $newDateTime->format('Y-m-d H:i');
+
+
+    // 👉 Xử lý ngày giờ
+    $dateObj = DateTime::createFromFormat('d/m/Y', $date_input);
+    $formattedDate = $dateObj ? $dateObj->format('Y-m-d') : date('Y-m-d');
+    $datetime = $formattedDate . ' ' . $time;
 
     
     $balance_q = pg_query_params($conn, "SELECT balance FROM accounts WHERE id = $1 AND user_id = $2", array($account_id, $user_id));
