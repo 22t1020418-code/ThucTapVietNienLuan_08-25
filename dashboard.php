@@ -903,8 +903,11 @@ $typeLabels = [
                               <td><?= number_format($row['remaining_balance']??0,0,',','.') ?> VND</td>
                               <td><?= htmlspecialchars($row['account_name']) ?></td>
                               <td class="action-buttons">
-                                  <?php if ($row['type'] == 1 || $row['type'] == 2): ?>
-                                    <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
+                                    <?php if (($row['type'] == 1 || $row['type'] == 2) && trim($row['description']) !== 'Số dư ban đầu'): ?>
+                                        <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
+                                    <?php else: ?>
+                                        <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
+                                    <?php endif; ?>
                                     <form method="post" action="delete_transaction.php" style="display:inline;">
                                       <input type="hidden" name="id" value="<?= $row['id'] ?>">
                                       <input type="hidden" name="step" value="info">
