@@ -904,22 +904,19 @@ $typeLabels = [
                               <td><?= htmlspecialchars($row['account_name']) ?></td>
                               <td class="action-buttons">
                                     <?php if (($row['type'] == 1 || $row['type'] == 2) && trim($row['description']) !== 'Số dư ban đầu'): ?>
-                                        <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>
-                                    <?php else: ?>
-                                        <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
-                                    <?php endif; ?>
-                                    <form method="post" action="delete_transaction.php" style="display:inline;">
-                                      <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                      <input type="hidden" name="step" value="info">
-                                      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                                      <button type="submit" class="btn-delete">🗑️ Xoá</button>
-                                    </form>
-                                  <?php elseif ($row['type'] == 3): ?>
-                                    <form method="post" action="restore.php" style="display:inline;" onsubmit="return confirm('Khôi phục giao dịch này?');">
-                                      <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
-                                      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                                      <button type="submit" class="btn-edit">↩️ Khôi phục</button>
-                                    </form>
+                                        <a href="edit_transaction.php?id=<?= $row['id'] ?>" class="btn-edit">✏️ Sửa</a>                       
+                                        <form method="post" action="delete_transaction.php" style="display:inline;">
+                                          <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                          <input type="hidden" name="step" value="info">
+                                          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                          <button type="submit" class="btn-delete">🗑️ Xoá</button>
+                                        </form>
+                                      <?php elseif ($row['type'] == 3): ?>
+                                        <form method="post" action="restore.php" style="display:inline;" onsubmit="return confirm('Khôi phục giao dịch này?');">
+                                          <input type="hidden" name="transaction_id" value="<?= $row['id'] ?>">
+                                          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                                          <button type="submit" class="btn-edit">↩️ Khôi phục</button>
+                                        </form>
                                   <?php else: ?>
                                     <span style="opacity: 0.5; color: gray;">🚫 Không thể chỉnh sửa</span>
                                   <?php endif; ?>
